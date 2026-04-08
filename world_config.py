@@ -88,19 +88,16 @@ class World:
         self.time = time  # seconds
         self.time_stop = True
 
-        self.comms_lag: tuple[bool, float, float] = (False, 0.0, 2.0)
+        self.processes: list = []
 
     def tick(self, dt: float):
+
         if self.time_stop:
             return
         self.time += dt
-        self.comms_lag += dt
 
-        for f in self.owned_facilities:
-            for a in f.areas.values():
-                pass
-
-    def wait
+        for process in self.processes:
+            process.tick(dt)
 
 
 
@@ -280,9 +277,14 @@ class Comm:
         self.recipient = recipient
 
         self.history: list[Mssg] = []
-        self.ping: tuple[float, float] = (0.0, 2.0) #elapsed, req
+        self.ping: list[float] = [0.0, 2.0] #elapsed, req
 
         world.comms[self.cid] = self
+
+    def personalize(self, mssg_type: MssgType, sender: str, recipient: str) -> str:
+        pass
+
+
 
     def can_send(self) -> dict:
         mssgs = {}
@@ -292,8 +294,9 @@ class Comm:
                 mssgs["new_task"] = Mssg(
                     mid = "new_task",
                     sender = self.sender,
+                    recipient = self.recipient,
                     mssg_type = MssgType.TASK_NEW,
-                    text = self.personalize(MssgType.TASK_NEW, self.sender)
+                    text = self.personalize(MssgType.TASK_NEW, self.sender, self.recipient)
                 )
 
         return mssgs
@@ -307,12 +310,11 @@ class Comm:
         self.history.append(mssg)
 
     def tick(self, dt: float): #seconds
-        if ping[0] < ping[1]:
-            ping += dt
-            else:
-                self.response(self.history[-1])
+        if self.ping[0] < self.ping[1]:
+            self.ping[0] += dt
         else:
-            return
+            world.processes.remove(self)
+            self.response(self.history[-1])
 
 #build world---------------------------------------------------------------------------------------
 

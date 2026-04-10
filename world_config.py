@@ -1,4 +1,5 @@
 import logging
+import random
 
 log = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ class World:
                  people: dict[str, "Person"] = None,
                  player: "Person" = None,
                  comms: dict[str, "Comm"] = None,
+                 scripts: dict[str, "Script"] = None,
                  time: float = 0):
         self.facilities = facilities if facilities else {}
         self.owned_facilities = []
@@ -84,6 +86,7 @@ class World:
         self.people = people if people else {}
         self.player = player
         self.comms = comms if comms else {}
+        self.scripts = scripts if scripts else {}
 
         self.time = time  # seconds
         self.time_stop = True
@@ -215,7 +218,7 @@ class Facility:
             total += s
         return total
 
-#staff---------------------------------------------------------------------------------------------
+#people ---------------------------------------------------------------------------------------------
 
 class Person:
     def __init__(self,
@@ -251,6 +254,7 @@ class Task:
 class Mssg:
     def __init__(self,
         mid: str,
+        comm: "Comm",
         sender: str, #pid
         recipient: str, #pid
         mssg_type: MssgType,
@@ -282,9 +286,30 @@ class Comm:
         world.comms[self.cid] = self
 
     def personalize(self, mssg_type: MssgType, sender: str, recipient: str) -> str:
-        pass
+        possibilities = []
 
+        for script in world.scripts.values():
+            points = 0
 
+            if script.mssg_type != mssg_type:
+                continue
+
+            else:
+                if script.sender == sender:
+                    points += 1
+                elif script.sender and sender != script.sender:
+                    continue
+                if script.recipient == recipient:
+                    points += 1
+                elif script.recipient and recipient != script.recipient:
+                    continue
+
+            possibilities.append((script, points))
+
+        possibilities.sort(key = lambda x: x[1], reverse = True)
+
+        choice = random.choice(possibilities)[:3]
+        return choice[0]
 
     def can_send(self) -> dict:
         mssgs = {}
@@ -293,6 +318,7 @@ class Comm:
 
                 mssgs["new_task"] = Mssg(
                     mid = "new_task",
+                    comm = self,
                     sender = self.sender,
                     recipient = self.recipient,
                     mssg_type = MssgType.TASK_NEW,
@@ -306,8 +332,11 @@ class Comm:
         self.ping[0] = 0.0
         world.processes.append(self)
 
-    def response(self, mssg: Mssg):
+    def receive(self, mssg: Mssg):
         self.history.append(mssg)
+
+    def response(self, mssg: Mssg):
+        pass
 
     def tick(self, dt: float): #seconds
         if self.ping[0] < self.ping[1]:
@@ -316,19 +345,33 @@ class Comm:
             world.processes.remove(self)
             self.response(self.history[-1])
 
+def build_comms():
+
+    world.comms["AI"] = Comm(
+        cid = "AI",
+        comm_type = CommType.AUTO,
+        sender = world.player.pid,
+        recipient = "AI"
+    )
+
 #build world---------------------------------------------------------------------------------------
 
 from data.facilities_design import build_facilities
 from data.objects_design import build_objects
 from data.people_design import build_people
+from data.script_design import Script, build_scripts
 
 def build_default_world():
     world.facilities = {}
     world.objects = {}
     world.people = {}
+    world.scripts = {}
+    world.comms = {}
     world.time = 0
 
     build_objects()
     build_facilities()
     build_people()
+    build_scripts()
+    build_comms()
 

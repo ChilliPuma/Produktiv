@@ -464,16 +464,19 @@ ui_facilities_inventory_up = UI(
 
 icon_size = (s(147) - frame_border * 2) // 1.25
 
+f_i_g_c_size = (ui_facilities_inventory_up.size[0] // 2 - frame_border * 2, s(147))
+
 for i in range(4):
-    col = 0
+    row = 0
     if i >= 2:
-        col = 1
+        row = 1
     globals()[f"ui_facilities_inventory_grid_cell_{i+1}"] = UI(
         name = f"facilities_inventory_grid_cell_{i+1}",
-        pos = (ui_facilities_inventory_up.pos[0] + col * (
-                ui_facilities_inventory_up.size[0] // 2 + frame_border),
+        pos = (ui_facilities_inventory_up.pos[0] + i * (
+                f_i_g_c_size[0] + frame_border * 2) - row * 2 * (
+                f_i_g_c_size[0] + frame_border * 2),
                ui_facilities_inventory_up.pos[1] + s(30) +
-               frame_border * 2 + i * (s(147) + frame_border * 2) - col * (s(147) * 2 + frame_border * 4)),
+               frame_border * 2 + row * (f_i_g_c_size[1] + frame_border * 2)),
         size = (ui_facilities_inventory_up.size[0] // 2 - frame_border * 2, s(147)),
         layer = 1,
         text = [
@@ -613,16 +616,19 @@ ui_item_contents_up = UI(
     ]
 )
 
+i_c_g_c_size = (ui_item_contents_up.size[0] // 2 - frame_border * 2, s(147))
+
 for i in range(4):
-    col = 0
+    row = 0
     if i >= 2:
-        col = 1
+        row = 1
     globals()[f"ui_item_contents_grid_cell_{i+1}"] = UI(
         name = f"item_contents_grid_cell_{i+1}",
-        pos = (ui_item_contents_up.pos[0] + col * (
-                ui_item_contents_up.size[0] // 2 + frame_border),
-               ui_item_contents_up.pos[1] + s(30) +
-               frame_border // 0.625 + i * (s(147) + frame_border * 2) - col * (s(147) * 2 + frame_border * 4)),
+        pos = (ui_item_contents_up.pos[0] + i * (
+                i_c_g_c_size[0] + frame_border * 2) - row * 2 * (
+                     i_c_g_c_size[0] + frame_border * 2),
+             ui_item_contents_up.pos[1] + s(30) +
+             frame_border * 2 + row * (i_c_g_c_size[1] + frame_border * 2)),
         size = (ui_item_contents_up.size[0] // 2 - frame_border * 2, s(147)),
         layer = 1,
         text = [
@@ -679,6 +685,7 @@ ui_item_contents_down = UI(
     pos = (ui_item_description.pos[0], frame_lo_rect[1] - frame_border * 2 - s(30)),
     size = (ui_item_description.size[0], s(30)),
     fill = COLORS["green_dead"],
+    layer = 0,
     text = [
         Text(
             text = "^",
@@ -696,7 +703,8 @@ ui_item_info = UI(
     pos = (ui_item_image.pos[0], ui_item_image.pos[1] + ui_item_image.size[1] + frame_border),
     size = (ui_item_image.size[0], frame_mid_rect[3] - ui_item_image.size[1]
             - ui_item_header.size[1] - frame_border * 5),
-    fill = COLORS["green_dead"]
+    fill = COLORS["green_dead"],
+    layer = 0
 )
 
 ui_item_weight = UI(
@@ -704,6 +712,7 @@ ui_item_weight = UI(
     pos = ui_item_info.pos,
     size = (ui_item_info.size[0], s(60)),
     fill = COLORS["green_lo"],
+    layer = 1,
     text = [
         Text(
             text = "weight",
@@ -731,6 +740,7 @@ ui_item_volume = UI(
     pos = (ui_item_weight.pos[0], ui_item_weight.pos[1] + ui_item_weight.size[1] + frame_border),
     size = ui_item_weight.size,
     fill = COLORS["green_lo"],
+    layer = 1,
     text = [
         Text(
             text = "volume",
@@ -778,6 +788,7 @@ ui_comms_down = UI(
     pos = (frame_mid_rect[0], frame_mid_rect[1] + frame_mid_rect[3] - ui_comms_up.size[1] - frame_border),
     size = ui_comms_up.size,
     fill = COLORS["cyan_lo"],
+    layer = 0,
     text = [
         Text(
             text = "^",
@@ -789,4 +800,45 @@ ui_comms_down = UI(
         )
     ]
 
+)
+
+comms_gc_size = (frame_mid_rect[3] - ui_comms_up.size[1] * 2 - std_padding * 2) // 3 - frame_border
+
+comms_pfp_size = comms_gc_size - frame_border * 2
+
+for i in range(3):
+    globals()[f"ui_comms_grid_cell_{i + 1}"] = UI(
+        name = f"comms_grid_cell_{i + 1}",
+        pos = (frame_border, ui_comms_up.pos[1] + ui_comms_up.size[1] + std_padding +
+               i * (comms_gc_size + frame_border)),
+        size = (frame_mid_rect[2] - frame_border * 2, comms_gc_size),
+        fill = COLORS["cyan_lo"],
+        layer = 0,
+        function = lambda: ui_manager.menu_switch("convo")
+    )
+
+    grid_cell_pos = ui_manager.ui_lookup(f"comms_grid_cell_{i + 1}").pos
+
+    globals()[f"ui_comms_grid_cell_image_{i + 1}"] = UI(
+        name = f"comms_grid_cell_image_{i + 1}",
+        pos = (grid_cell_pos[0] + frame_border, grid_cell_pos[1] + frame_border),
+        size = (comms_pfp_size, comms_pfp_size),
+        fill = COLORS["cyan_dead"],
+        layer = 1,
+        image = [
+            Image(
+                scale = img_scale
+            )
+        ]
+        )
+
+# convo menu UI elements -------------------------------------------------------------------------------------
+
+convo_header_h = s(160)
+
+ui_convo_header = UI(
+    name = "convo_header",
+    pos = (0, frame_hi_h),
+    size = (frame_hi_rect[2], convo_header_h),
+    fill = COLORS["blue_lo"]
 )

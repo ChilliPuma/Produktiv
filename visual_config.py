@@ -124,6 +124,7 @@ def init_display():
         "red_hi": (250, 0, 0, 255),
         "red_border": (250, 0, 0, 255, frame_border),
 
+        "blue_dead": (5, 10, 15, 255),
         "blue_lo": (10, 20, 30, 255),
         "blue_mid": (20, 30, 100, 255),
         "blue_hi": (20, 30, 250, 255),

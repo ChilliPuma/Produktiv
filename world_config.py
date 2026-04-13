@@ -229,6 +229,7 @@ class Person:
         homeland: str,
         skills: dict[Skill, float], # max 10
         temperament: Temperament,
+        title: str = "",
         location: Area = None
         ):
 
@@ -239,6 +240,7 @@ class Person:
         self.homeland = homeland
         self.skills = skills
         self.temperament = temperament
+        self.title = title
         self.location = location
 
         world.people[pid] = self
@@ -258,7 +260,8 @@ class Mssg:
         sender: str, #pid
         recipient: str, #pid
         mssg_type: MssgType,
-        text: str
+        text: str,
+        timestamp: float = 0.0
         ):
 
         self.mid = mid
@@ -266,6 +269,7 @@ class Mssg:
         self.recipient = recipient
         self. mssg_type = mssg_type
         self.text = text
+        self.timestamp = timestamp
 
 class Comm:
     def __init__(self,
@@ -328,6 +332,7 @@ class Comm:
         return mssgs
 
     def send(self, mssg: Mssg):
+        mssg.timestamp = world.time
         self.history.append(mssg)
         self.ping[0] = 0.0
         world.processes.append(self)
@@ -347,11 +352,11 @@ class Comm:
 
 def build_comms():
 
-    world.comms["AI"] = Comm(
-        cid = "AI",
+    world.comms["hai"] = Comm(
+        cid = "hai",
         comm_type = CommType.AUTO,
         sender = world.player.pid,
-        recipient = "AI"
+        recipient = "hai",
     )
 
 #build world---------------------------------------------------------------------------------------

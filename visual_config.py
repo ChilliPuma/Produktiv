@@ -78,6 +78,7 @@ def init_display():
     frame_mid_rect = (-frame_border, frame_hi_h, SQUARE_SIZE+2*frame_border, frame_mid_h)
     frame_lo_rect = (0, SQUARE_SIZE - frame_lo_h, SQUARE_SIZE, frame_lo_h)
 
+    font_topaz_xs = load_font("topaz.ttf", s(9))
     font_topaz_s = load_font("topaz.ttf", s(16))
     font_topaz_m = load_font("topaz.ttf", s(21))
     font_topaz_xm = load_font("topaz.ttf", s(28))
@@ -86,6 +87,7 @@ def init_display():
     font_topaz_xxl = load_font("topaz.ttf", s(72))
 
     FONTS = {
+        "topaz_xs": font_topaz_xs,
         "topaz_s": font_topaz_s,
         "topaz_m": font_topaz_m,
         "topaz_xm": font_topaz_xm,

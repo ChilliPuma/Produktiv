@@ -236,6 +236,8 @@ image_size = s(210)
 
 icon_scale = 1.75
 
+pfp_scale = 2.5
+
 img_scale = 3.225
 
 cover_scale = 3.5
@@ -771,6 +773,7 @@ ui_comms_up = UI(
     size = (frame_mid_rect[2], ui_facilities_inventory_up.size[1]),
     fill = COLORS["cyan_lo"],
     layer = 0,
+    function = lambda: ui_manager.comms_scroll(-1),
     text = [
         Text(
             text = "^",
@@ -789,6 +792,7 @@ ui_comms_down = UI(
     size = ui_comms_up.size,
     fill = COLORS["cyan_lo"],
     layer = 0,
+    function = lambda: ui_manager.comms_scroll(1),
     text = [
         Text(
             text = "^",
@@ -804,41 +808,212 @@ ui_comms_down = UI(
 
 comms_gc_size = (frame_mid_rect[3] - ui_comms_up.size[1] * 2 - std_padding * 2) // 3 - frame_border
 
-comms_pfp_size = comms_gc_size - frame_border * 2
+comms_pfp_size = comms_gc_size
 
 for i in range(3):
     globals()[f"ui_comms_grid_cell_{i + 1}"] = UI(
         name = f"comms_grid_cell_{i + 1}",
-        pos = (frame_border, ui_comms_up.pos[1] + ui_comms_up.size[1] + std_padding +
+        pos = (frame_border + comms_gc_size, ui_comms_up.pos[1] + ui_comms_up.size[1] + std_padding +
                i * (comms_gc_size + frame_border)),
-        size = (frame_mid_rect[2] - frame_border * 2, comms_gc_size),
+        size = (frame_mid_rect[2] - frame_border * 2 - comms_gc_size, comms_gc_size),
         fill = COLORS["cyan_lo"],
         layer = 0,
-        function = lambda: ui_manager.menu_switch("convo")
+        function = lambda: ui_manager.menu_switch("convo"),
+        text = [
+            Text(
+                text = "Firstname Lastname",
+                font = FONTS["topaz_xm"],
+                v_align = "top",
+                h_align = "left",
+                pad_x = frame_border * 2,
+                pad_y = frame_border * 2
+            ),
+            Text(
+                text = "title",
+                font = FONTS["topaz_m"],
+                color = COLORS["cyan_hi"],
+                v_align = "top",
+                h_align = "left",
+                pad_y = std_padding * 2,
+            ),
+            Text(
+                text = "Here will be the last message that was sent, should not be too long...",
+                font = FONTS["topaz_s"],
+                color = COLORS["cyan_mid"],
+                v_align = "top",
+                h_align = "left",
+                pad_y = int(std_padding * 3.5),
+                pad_x = frame_border * 2,
+            ),
+            Text(
+                text = "pid",
+                color = COLORS["transparent"]
+            ),
+            Text(
+                text = "Day DD, HH:MM",
+                font = FONTS["topaz_s"],
+                color = COLORS["cyan_dead"],
+                v_align = "bottom",
+                h_align = "right",
+                pad_y = frame_border
+            )
+        ]
     )
 
     grid_cell_pos = ui_manager.ui_lookup(f"comms_grid_cell_{i + 1}").pos
 
     globals()[f"ui_comms_grid_cell_image_{i + 1}"] = UI(
         name = f"comms_grid_cell_image_{i + 1}",
-        pos = (grid_cell_pos[0] + frame_border, grid_cell_pos[1] + frame_border),
+        pos = (grid_cell_pos[0] - comms_gc_size, grid_cell_pos[1]),
         size = (comms_pfp_size, comms_pfp_size),
         fill = COLORS["cyan_dead"],
         layer = 1,
         image = [
             Image(
-                scale = img_scale
+                scale = pfp_scale
             )
         ]
         )
 
 # convo menu UI elements -------------------------------------------------------------------------------------
 
-convo_header_h = s(160)
+convo_header_h = s(70)
+convo_detail_w = s(70)
 
 ui_convo_header = UI(
     name = "convo_header",
     pos = (0, frame_hi_h),
-    size = (frame_hi_rect[2], convo_header_h),
-    fill = COLORS["blue_lo"]
+    size = (frame_hi_rect[2] - convo_detail_w, convo_header_h),
+    fill = COLORS["blue_lo"],
+    layer = 0,
+    text = [
+        Text(
+            text = "Name Lastname",
+            font = FONTS["topaz_l"],
+            color = COLORS["cyan_hi"],
+            h_align = "left",
+            v_align = "bottom"
+        )
+    ]
+)
+
+ui_convo_detail = UI(
+    name = "convo_detail",
+    pos = (ui_convo_header.size[0], frame_hi_h),
+    size = (convo_detail_w, convo_header_h),
+    fill = COLORS["cyan_mid"],
+    layer = 0,
+    text = [
+        Text(
+            text = "=",
+            font = FONTS["topaz_l"],
+            color = COLORS["white"],
+            v_align = "top",
+            pad_y = frame_border + s(10),
+        ),
+        Text(
+            text = "=",
+            font = FONTS["topaz_l"],
+            color = COLORS["white"],
+            v_align = "bottom",
+            pad_y = frame_border,
+        )
+    ]
+)
+
+ui_convo_up = UI(
+    name = "convo_up",
+    pos = (frame_mid_rect[0], ui_convo_header.pos[1] + ui_convo_header.size[1] + frame_border),
+    size = ui_comms_up.size,
+    fill = COLORS["cyan_dead"],
+    layer = 0,
+    function = lambda: ui_manager.convo_scroll(-1),
+    text = [
+        Text(
+            text = "^",
+            font = FONTS["topaz_xl"],
+            color = COLORS["black"],
+            v_align = "top",
+            pad_y = s(2)
+
+        )
+    ]
+)
+
+convo_texting_h = s(180)
+
+ui_convo_down = UI(
+    name = "convo_down",
+    pos = (frame_mid_rect[0], frame_mid_rect[1] + frame_mid_rect[3] -
+           ui_comms_up.size[1] - frame_border - convo_texting_h),
+    size = ui_convo_up.size,
+    fill = COLORS["cyan_dead"],
+    layer = 0,
+    function = lambda: ui_manager.convo_scroll(1),
+    text = [
+        Text(
+            text = "^",
+            font = FONTS["topaz_xl"],
+            color = COLORS["black"],
+            v_align = "top",
+            pad_y = s(-28),
+            rotate = 180
+        )
+    ]
+
+)
+
+ui_convo_text_up = UI(
+    name = "convo_text_up",
+    pos = (0, frame_lo_rect[1] - convo_texting_h),
+    size = (s(30), convo_texting_h),
+    fill = COLORS["blue_dead"],
+    layer = 0,
+    text = [
+        Text(
+            text = "^",
+            font = FONTS["topaz_xl"],
+            color = COLORS["black"],
+            h_align = "left",
+            pad_x = s(2),
+            rotate = 90
+        )
+    ]
+)
+
+ui_convo_text_down = UI(
+    name = "convo_text_down",
+    pos = (ui_convo_header.size[0] - s(30) - frame_border, ui_convo_text_up.pos[1]),
+    size = ui_convo_text_up.size,
+    fill = COLORS["blue_dead"],
+    layer = 0,
+    text = [
+        Text(
+            text = "^",
+            font = FONTS["topaz_xl"],
+            color = COLORS["black"],
+            h_align = "right",
+            pad_x = s(8),
+            rotate = -90
+        )
+    ]
+)
+
+ui_convo_send = UI(
+    name = "convo_send",
+    pos = (ui_convo_down.size[0] - convo_detail_w - frame_border * 2, ui_convo_text_up.pos[1]),
+    size = (convo_detail_w, convo_texting_h),
+    fill = COLORS["blue_lo"],
+    layer = 0,
+    text = [
+        Text(
+            text = "S E N D",
+            font = FONTS["topaz_l"],
+            color = COLORS["black"],
+            v_align = "top",
+            h_align = "left",
+            pad_x = frame_border * 4,
+            pad_y = frame_border * 4,
+        )
+    ]
 )

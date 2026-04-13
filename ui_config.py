@@ -250,6 +250,8 @@ class UIManager:
     viewed_item_history = []
     item_cont_scroll = 0
 
+    cmms_scroll = 0
+
     def draw(self, surface):
 
         for ui in sorted(UI.elements, key=lambda e: e.layer):
@@ -395,6 +397,8 @@ class UIManager:
 
             self.perma_ui_color_switch("cyan")
 
+            self.comms_display()
+
         self.menu_history.append(menu_name)
         log.info("Switching menu to: %s", menu_name)
         log.debug("Menu history: %s", self.menu_history)
@@ -409,6 +413,24 @@ class UIManager:
                 ui.visible = False
                 ui.old = True
 
+    def check_scroll(self, menu: str, color: str, items: int, cells: int, scroll: int):
+        ui_up = self.ui_lookup(menu + "_up")
+        ui_down = self.ui_lookup(menu + "_down")
+
+        if items > cells + cells * scroll:
+            ui_down.fill = COLORS[f"{color}_mid"]
+            ui_down.text[0].color = COLORS[f"{color}_hi"]
+        else:
+            ui_down.fill = COLORS[f"{color}_dead"]
+            ui_down.text[0].color = COLORS[f"black"]
+
+        if scroll != 0:
+            ui_up.fill = COLORS[f"{color}_mid"]
+            ui_up.text[0].color = COLORS[f"{color}_hi"]
+        else:
+            ui_up.fill = COLORS[f"{color}_dead"]
+            ui_up.text[0].color = COLORS[f"black"]
+
     def facilities_display(self, f):
         v_facility_inventory = []
         for area_name, area in f.areas.items():
@@ -416,8 +438,6 @@ class UIManager:
                 v_facility_inventory.append((obj, area_name))
 
         inv_items_no = len(v_facility_inventory)
-        f_inv_down = self.ui_lookup("facilities_inventory_down")
-        f_inv_up = self.ui_lookup("facilities_inventory_up")
 
         f_header = self.ui_lookup("facilities_header")
         f_header.text[0].text = f.name
@@ -440,18 +460,10 @@ class UIManager:
         f_power.text[0].text = f"/{f.power}kW"
         f_power.text[1].text = f"x"
 
-        if inv_items_no - self.facility_inv_scroll * 4 > 4:
-            f_inv_down.fill = COLORS["orange_mid"]
-            f_inv_down.text[0].color = COLORS["orange_hi"]
-        else:
-            f_inv_down.fill = COLORS["orange_dead"]
-            f_inv_down.text[0].color = COLORS["black"]
-        if self.facility_inv_scroll > 0:
-            f_inv_up.fill = COLORS["orange_mid"]
-            f_inv_up.text[0].color = COLORS["orange_hi"]
-        else:
-            f_inv_up.fill = COLORS["orange_dead"]
-            f_inv_up.text[0].color = COLORS["black"]
+        cells = 4
+
+        self.check_scroll(
+            "facilities_inventory", "orange", inv_items_no, cells, self.facility_inv_scroll)
 
         v_facility_inventory.sort(key=lambda item: item[0].area, reverse=True)
 
@@ -468,6 +480,7 @@ class UIManager:
                 f_inv_item_cell.text[2].text = ""
                 f_inv_item_cell.text[3].text = ""
                 f_inv_item_cell.fill = COLORS["black"]
+                f_inv_item_cell.function = None
 
             else:
                 f_inv_item_img = self.ui_lookup(f"facilities_inventory_grid_cell_image_{i + 1}")
@@ -483,13 +496,13 @@ class UIManager:
                 f_inv_item_cell.text[2].text = unify(f_inv_item.area, "area")
                 f_inv_item_cell.fill = COLORS["orange_lo"]
                 f_inv_item_cell.text[3].text = f_inv_item.oid
+                f_inv_item_cell.function = lambda: self.menu_switch("item")
 
     def item_display(self):
 
         if self.click_history[-1] in (
         "back_button", "item_contents_up", "item_contents_down"):
             item = self.viewed_item_history[-1]
-
         else:
             item = world.objects[self.ui_lookup(self.click_history[-1]).text[3].text]
             self.item_cont_scroll = 0
@@ -498,30 +511,17 @@ class UIManager:
         self.ui_lookup("item_header").text[0].text = item.name
         self.ui_lookup("item_description").text[0].text = item.description
         self.ui_lookup("item_image").image[0].png = item.oid.rsplit("_", 1)[0]
-
         self.ui_lookup("item_weight").text[1].text = unify(item.total_weight(), "weight")
-
         self.ui_lookup("item_volume").text[1].text = unify(item.volume, "volume")
 
         item_contents = []
         for content in item.storage:
             item_contents.append((content, content.volume))
 
-        i_cont_down = self.ui_lookup("item_contents_down")
-        i_cont_up = self.ui_lookup("item_contents_up")
+        cells = 4
 
-        if len(item_contents) - self.item_cont_scroll * 4 > 4:
-            i_cont_down.fill = COLORS["green_mid"]
-            i_cont_down.text[0].color = COLORS["green_hi"]
-        else:
-            i_cont_down.fill = COLORS["green_dead"]
-            i_cont_down.text[0].color = COLORS["black"]
-        if self.item_cont_scroll > 0:
-            i_cont_up.fill = COLORS["green_mid"]
-            i_cont_up.text[0].color = COLORS["green_hi"]
-        else:
-            i_cont_up.fill = COLORS["green_dead"]
-            i_cont_up.text[0].color = COLORS["black"]
+        self.check_scroll(
+            "item_contents", "green", len(item_contents), cells, self.item_cont_scroll)
 
         item_contents.sort(key=lambda c: c[1], reverse=True)
 
@@ -538,7 +538,7 @@ class UIManager:
                 i_cont_cell.text[1].text = ""
                 i_cont_cell.text[2].text = ""
                 i_cont_cell.text[3].text = ""
-                i_cont_cell.fill = COLORS["black"]
+                i_cont_cell.fill, i_cont_cell.function = COLORS["black"], None
 
             else:
                 i_cont_img.image[0].png = item_contents[
@@ -550,11 +550,63 @@ class UIManager:
                 i_cont_cell.text[0].text = i_cont_item.name
                 i_cont_cell.text[1].text = unify(i_cont_item.weight, "weight")
                 i_cont_cell.text[2].text = unify(i_cont_item.volume, "volume")
-                i_cont_cell.fill = COLORS["green_lo"]
+                i_cont_cell.fill, i_cont_cell.function = COLORS["green_lo"], lambda: self.item_display()
                 i_cont_cell.text[3].text = i_cont_item.oid
 
         self.menu_refresh()
 
+    def comms_display(self):
+
+        if not self.click_history[-1] in (
+        "back_button", "comms_up", "comms_down"):
+            self.cmms_scroll = 0
+
+        contacts = [
+            (comm, comm.history[-1].timestamp if comm.history else None) for comm in world.comms.values()
+        ]
+        contacts.sort(key = lambda c: (c[0] != world.comms["hai"], -(c[1] or 0)))
+
+        gcs = 3
+
+        self.check_scroll("comms", "cyan", len(contacts), gcs, self.cmms_scroll)
+
+        for i in range (gcs):
+            gc = self.ui_lookup(f"comms_grid_cell_{i + 1}")
+            gc_image = self.ui_lookup(f"comms_grid_cell_image_{i + 1}")
+
+            if i >= len(contacts) - gcs * self.cmms_scroll:
+                gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
+                    "", "", "", "", "")
+                gc.fill, gc.function = COLORS["transparent"], None
+                gc_image.fill, gc_image.image[0].png = COLORS["transparent"], ""
+
+
+            else:
+                comm = contacts[i + gcs * self.cmms_scroll][0]
+
+                if comm.cid == "hai":
+                    gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
+                        "hAI",
+                        "Your helper AI",
+                        comm.history[-1].text if comm.history else "",
+                        comm.cid,
+                        f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
+                    )
+                    gc.fill, gc.function = COLORS["gray_mid"], lambda: self.menu_switch("convo")
+                    gc_image.image[0].png, gc_image.fill = "hai", COLORS["gray_lo"]
+
+                else:
+                    gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
+                        world.people[comm.recipient].name,
+                        world.people[comm.recipient].title,
+                        comm.history[-1].text if comm.history else "",
+                        comm.cid,
+                        f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
+                    )
+                    gc.fill = COLORS["cyan_lo"]
+                    gc_image.image[0].png, gc_image.fill = world.people[comm.recipient].pid, COLORS["cyan_dead"]
+
+        self.menu_refresh()
 
     def ui_lookup(self, ui_name: str) -> UI | None:
         for ui in UI.elements:
@@ -610,7 +662,7 @@ class UIManager:
         if scroll > 0:
             if f_inv_down.fill == COLORS["orange_dead"]:
                 return
-        if scroll < 0:
+        elif scroll < 0:
             if f_inv_up.fill == COLORS["orange_dead"]:
                 return
 
@@ -625,12 +677,29 @@ class UIManager:
         if scroll > 0:
             if i_cont_down.fill == COLORS["green_dead"]:
                 return
-        if scroll < 0:
+        elif scroll < 0:
             if i_cont_up.fill == COLORS["green_dead"]:
                 return
 
         self.item_cont_scroll += scroll
         self.item_display()
+
+    def comms_scroll(self, scroll:int):
+
+        c_up = self.ui_lookup("comms_up")
+        c_down = self.ui_lookup("comms_down")
+
+        if scroll > 0:
+            if c_up.fill == COLORS["cyan_dead"]:
+                return
+
+        elif scroll < 0:
+            if c_down.fill == COLORS["cyan_dead"]:
+                return
+
+        self.cmms_scroll += scroll
+        self.comms_display()
+
 
     def menu_refresh(self):
         for ui in UI.elements:

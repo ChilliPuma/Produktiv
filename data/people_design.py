@@ -15,7 +15,8 @@ def build_people():
             Skill.SOC: 1.4,
             Skill.INT: 2.5
         },
-        temperament = Temperament.PHLEGMATIC
+        temperament = Temperament.PHLEGMATIC,
+        title = "Dropout Engineer"
     )
     add_person("shed_backyard", "interior", world.people["smith_guy"])
 

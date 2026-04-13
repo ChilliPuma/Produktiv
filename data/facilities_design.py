@@ -38,15 +38,15 @@ def build_facilities():
                 area = 28,
                 inventory = design_space([
                     ("bench_work", 1, []),
-                    ("box_cardboard_m", 1, [
-                        ("bit_rivet", 6, []),
-                        ("knife_handle", 2, []),
-                        ("knife_blade", 3, [])
-                    ]),
+                    ("box_cardboard_m", 1, []),
                     ("box_cardboard_l", 1, []),
                     ("box_cardboard_s", 1, [
-                        ("bit_rivet", 12, []),
-                    ]),
+                        ("bit_rivet", 12, [])]),
+                    ("box_cardboard_l", 1, [
+                        ("knife", 2, []),
+                        ("knife_blade", 5, []),
+                        ("knife_handle", 3, [])
+                    ])
     ])
             ),
             "exterior": Area(

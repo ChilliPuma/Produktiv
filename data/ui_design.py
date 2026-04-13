@@ -447,26 +447,10 @@ ui_facilities_manage = UI(
     ]
 )
 
-ui_facilities_inventory_up = UI(
-    name = "facilities_inventory_up",
-    pos = (image_size + frame_border * 2, ui_facilities_image.pos[1]),
-    size = (SQUARE_SIZE - image_size - frame_border * 2, s(30)),
-    fill = COLORS["gray_lo"],
-    layer = 1,
-    text = [
-        Text(
-            text = "^",
-            color = COLORS["black"],
-            font = FONTS["topaz_xl"],
-            v_align = "top",
-            pad_y = s(2)
-        )
-    ]
-)
-
 icon_size = (s(147) - frame_border * 2) // 1.25
+gc_pos_x = image_size + frame_border * 2
+f_i_g_c_size = ((frame_mid_rect[2] - gc_pos_x) // 2 - frame_border * 2, s(147))
 
-f_i_g_c_size = (ui_facilities_inventory_up.size[0] // 2 - frame_border * 2, s(147))
 
 for i in range(4):
     row = 0
@@ -474,12 +458,11 @@ for i in range(4):
         row = 1
     globals()[f"ui_facilities_inventory_grid_cell_{i+1}"] = UI(
         name = f"facilities_inventory_grid_cell_{i+1}",
-        pos = (ui_facilities_inventory_up.pos[0] + i * (
+        pos = (gc_pos_x + i * (
                 f_i_g_c_size[0] + frame_border * 2) - row * 2 * (
                 f_i_g_c_size[0] + frame_border * 2),
-               ui_facilities_inventory_up.pos[1] + s(30) +
-               frame_border * 2 + row * (f_i_g_c_size[1] + frame_border * 2)),
-        size = (ui_facilities_inventory_up.size[0] // 2 - frame_border * 2, s(147)),
+               ui_facilities_image.pos[1] + row * (f_i_g_c_size[1] + frame_border * 2)),
+        size = (f_i_g_c_size[0], s(147)),
         layer = 1,
         text = [
             Text(
@@ -530,9 +513,29 @@ for i in range(4):
         ]
     )
 
+f_scroll_x = (SQUARE_SIZE - image_size - frame_border * 2) // 2
+f_scroll_pos_y = ui_facilities_image.pos[1] + f_i_g_c_size[1] * 2 + frame_border * 4
+
+ui_facilities_inventory_up = UI(
+    name = "facilities_inventory_up",
+    pos = (gc_pos_x, f_scroll_pos_y),
+    size = (f_scroll_x, s(30)),
+    fill = COLORS["gray_lo"],
+    layer = 1,
+    text = [
+        Text(
+            text = "^",
+            color = COLORS["black"],
+            font = FONTS["topaz_xl"],
+            v_align = "top",
+            pad_y = s(2)
+        )
+    ]
+)
+
 ui_facilities_inventory_down = UI(
     name = "facilities_inventory_down",
-    pos = (ui_facilities_inventory_up.pos[0], frame_lo_rect[1] - frame_border * 2 - s(60) - s(127)),
+    pos = (gc_pos_x + f_i_g_c_size[0] + frame_border, f_scroll_pos_y),
     size = ui_facilities_inventory_up.size,
     fill = COLORS["gray_lo"],
     layer = 1,
@@ -585,7 +588,7 @@ ui_item_description = UI(
     name = "item_description",
     pos = (ui_item_image.size[0] + frame_border, ui_item_header.pos[1] + ui_item_header.size[1] + frame_border),
     size = (ui_item_header.size[0] - ui_item_image.size[0] - frame_border * 2,
-            image_size // 1.5),
+            image_size // 1.5 + s(30)),
     fill = COLORS["green_dead"],
     layer = 0,
     text = [
@@ -601,24 +604,9 @@ ui_item_description = UI(
     ]
 )
 
-ui_item_contents_up = UI(
-    name = "item_contents_up",
-    pos = (ui_item_description.pos[0], ui_item_image.pos[1] + image_size // 1.5 + frame_border),
-    size = (ui_item_description.size[0], s(30)),
-    fill = COLORS["green_dead"],
-    layer = 0,
-    text = [
-        Text(
-            text = "^",
-            font = FONTS["topaz_xl"],
-            color = COLORS["black"],
-            v_align = "top",
-            pad_y = s(2),
-        )
-    ]
-)
-
-i_c_g_c_size = (ui_item_contents_up.size[0] // 2 - frame_border * 2, s(147))
+i_c_g_c_size = (ui_item_description.size[0] // 2 - frame_border * 2, s(147))
+i_c_g_c_pos = (ui_item_description.pos[0] + frame_border,
+               ui_item_description.pos[1] + ui_item_description.size[1] + frame_border)
 
 for i in range(4):
     row = 0
@@ -626,12 +614,11 @@ for i in range(4):
         row = 1
     globals()[f"ui_item_contents_grid_cell_{i+1}"] = UI(
         name = f"item_contents_grid_cell_{i+1}",
-        pos = (ui_item_contents_up.pos[0] + i * (
+        pos = (ui_item_description.pos[0] + i * (
                 i_c_g_c_size[0] + frame_border * 2) - row * 2 * (
                      i_c_g_c_size[0] + frame_border * 2),
-             ui_item_contents_up.pos[1] + s(30) +
-             frame_border * 2 + row * (i_c_g_c_size[1] + frame_border * 2)),
-        size = (ui_item_contents_up.size[0] // 2 - frame_border * 2, s(147)),
+             i_c_g_c_pos[1] + frame_border + row * (i_c_g_c_size[1] + frame_border * 2)),
+        size = (ui_item_description.size[0] // 2 - frame_border * 2, s(147)),
         layer = 1,
         text = [
             Text(
@@ -682,10 +669,30 @@ for i in range(4):
         ]
     )
 
+i_scroll_y = (frame_lo_rect[1] - frame_border * 2 - s(30))
+i_scroll_size_x = (ui_item_description.size[0] // 2 - frame_border)
+
+ui_item_contents_up = UI(
+    name = "item_contents_up",
+    pos = (ui_item_description.pos[0], i_scroll_y),
+    size = (i_scroll_size_x, s(30)),
+    fill = COLORS["green_dead"],
+    layer = 0,
+    text = [
+        Text(
+            text = "^",
+            font = FONTS["topaz_xl"],
+            color = COLORS["black"],
+            v_align = "top",
+            pad_y = s(2),
+        )
+    ]
+)
+
 ui_item_contents_down = UI(
     name = "item_contents_down",
-    pos = (ui_item_description.pos[0], frame_lo_rect[1] - frame_border * 2 - s(30)),
-    size = (ui_item_description.size[0], s(30)),
+    pos = (ui_item_description.pos[0] + i_scroll_size_x, i_scroll_y),
+    size = (i_scroll_size_x, s(30)),
     fill = COLORS["green_dead"],
     layer = 0,
     text = [

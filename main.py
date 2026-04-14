@@ -1,5 +1,7 @@
 import pygame
 
+from actions import actions
+
 pygame.init()
 
 import logging
@@ -90,8 +92,6 @@ while running:
     pygame.display.flip()
 
     dt = clock.tick(60) / 1000  # seconds
-    world.tick(dt*TIME_SCALE)
-    ui_time_bar.text[0].text = format_time(world.time)
-    ui_time_bar.old = True
+    actions.tick(dt*TIME_SCALE)
 
 

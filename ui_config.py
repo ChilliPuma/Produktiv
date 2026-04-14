@@ -659,19 +659,21 @@ class UIManager:
                     gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
                     gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
                     gc_r.text[0].text, gc_r.text[1].text = text[0], text[1]
-                    gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender, COLORS["orange_dead"]
+                    gc_r.fill = COLORS["orange_lo"]
+                    gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender, COLORS["transparent"]
                     filled += 1
                     continue
                 elif text[2] == "left":
                     gc_l.text[0].text, gc_l.text[1].text = text[0], (text[1] if text[1] else "")
-                    gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient, COLORS["cyan_dead"]
+                    gc_l.fill = COLORS["cyan_lo"]
+                    gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient, COLORS["transparent"]
                     gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
                     gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
                     filled += 1
                     continue
 
-
         self.check_scroll("convo", "cyan", len(comm.transcript), gcs, self.conv_scroll)
+        self.menu_refresh()
 
 
 
@@ -766,6 +768,21 @@ class UIManager:
 
         self.cmms_scroll += scroll
         self.comms_display()
+
+    def convo_scroll(self, scroll):
+
+        up = self.ui_lookup("convo_up")
+        down = self.ui_lookup("convo_down")
+
+        if scroll > 0:
+            if up.fill == COLORS["cyan_dead"]:
+                return
+        if scroll < 0:
+            if down.fill == COLORS["cyan_dead"]:
+                return
+
+        self.conv_scroll += scroll
+        self.convo_display()
 
 
     def menu_refresh(self):

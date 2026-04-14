@@ -1,6 +1,6 @@
 import pygame
 
-from actions import actions
+from change import change
 
 pygame.init()
 
@@ -92,6 +92,6 @@ while running:
     pygame.display.flip()
 
     dt = clock.tick(60) / 1000  # seconds
-    actions.tick(dt*TIME_SCALE)
+    change.tick(dt*TIME_SCALE)
 
 

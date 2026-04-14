@@ -2,7 +2,7 @@ from data.ui_design import ui_time_bar
 from world_config import world, format_time
 
 
-class Actions:
+class Change:
     def __init__(self):
 
         asap: list = []
@@ -13,7 +13,8 @@ class Actions:
         ui_time_bar.text[0].text = format_time(world.time)
         ui_time_bar.old = True
 
-        if
+        if self.asap:
+            for
 
 
-actions = Actions()
+change = Change()

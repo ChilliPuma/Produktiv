@@ -71,6 +71,30 @@ def format_time(seconds: float) -> str:
     day = 1 + seconds // 86400
     return f"Day {day}, {hours:02d}:{minutes:02d}"
 
+def format_time_short(seconds: float) -> str:
+    seconds = int(seconds)
+    minutes = (seconds // 60) % 60
+    hours = (seconds // 3600) % 24
+    day = 1 + seconds // 86400
+    return f"{day};{hours:02d}:{minutes:02d}"
+
+def text_lines(text:str, char:int):
+    words = text.split()
+    lines = []
+    line = ""
+    for word in words:
+        if len(line) + len(word) + (1 if line else 0) < char:
+            if line:
+                line += " "
+            line += word
+        else:
+            line = word
+
+    if line:
+        lines.append(line)
+
+    return lines
+
 class World:
     def __init__(self,
                  facilities: dict[str, "Facility"] = None,
@@ -285,7 +309,10 @@ class Comm:
         self.recipient = recipient
 
         self.history: list[Mssg] = []
+        self.transcript: list = [] #text, "left" or "right"
+
         self.ping: list[float] = [0.0, 2.0] #elapsed, req
+        self.scripted: list = [] #Mssg, t-
 
         world.comms[self.cid] = self
 
@@ -334,21 +361,49 @@ class Comm:
     def send(self, mssg: Mssg):
         mssg.timestamp = world.time
         self.history.append(mssg)
+        for line in text_lines(mssg.text, 81):
+            self.transcript.append((line, mssg.timestamp, "right"))
         self.ping[0] = 0.0
         world.processes.append(self)
 
     def receive(self, mssg: Mssg):
         self.history.append(mssg)
+        for line in text_lines(mssg.text, 81):
+            self.transcript.append((line, mssg.timestamp, "left"))
 
     def response(self, mssg: Mssg):
         pass
 
-    def tick(self, dt: float): #seconds
+    def script(self, script: "Script", time: float):
+        mssg = Mssg(
+            mid = script.sid,
+            mssg_type = script.mssg_type,
+            comm = self,
+            sender = self.recipient,
+            recipient = self.sender,
+            text = script.text
+        )
+        self.scripted.append((mssg, time))
+        world.processes.append(self) if self not in world.processes else None
+
+    def tick(self, dt: float):#seconds
+        print(self.scripted)
         if self.ping[0] < self.ping[1]:
             self.ping[0] += dt
+
+        elif self.scripted:
+            new_scripted = []
+            for mssg, time in self.scripted:
+                if time - dt <= 0:
+                    self.receive(mssg)
+                else:
+                    time -= dt
+                    new_scripted.append((mssg, time))
+            self.scripted = new_scripted
+
         else:
             world.processes.remove(self)
-            self.response(self.history[-1])
+            self.response(self.history[-1]) if self.history[-1].sender == self.sender else None
 
 def build_comms():
 
@@ -377,6 +432,6 @@ def build_default_world():
     build_objects()
     build_facilities()
     build_people()
-    build_scripts()
     build_comms()
+    build_scripts()
 

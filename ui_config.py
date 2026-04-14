@@ -12,7 +12,7 @@ from collections import deque
 
 from visual_config import COLORS, FONTS, std_padding, BASE_DIR
 
-from world_config import world, build_default_world, format_time
+from world_config import world, build_default_world, format_time, text_lines
 
 
 def unify(qty: float, unit: str) -> str:
@@ -252,6 +252,10 @@ class UIManager:
 
     cmms_scroll = 0
 
+    viewed_comm = ""
+    conv_scroll = 0
+    conv_txt_scroll = 0
+
     def draw(self, surface):
 
         for ui in sorted(UI.elements, key=lambda e: e.layer):
@@ -398,6 +402,12 @@ class UIManager:
             self.perma_ui_color_switch("cyan")
 
             self.comms_display()
+
+        elif menu_name == "convo":
+
+            self.perma_ui_color_switch("blue")
+
+            self.convo_display()
 
         self.menu_history.append(menu_name)
         log.info("Switching menu to: %s", menu_name)
@@ -584,11 +594,15 @@ class UIManager:
             else:
                 comm = contacts[i + gcs * self.cmms_scroll][0]
 
+                last_text = comm.history[-1].text if comm.history else ""
+                if len(last_text) > 91:
+                    last_text = last_text[:91] + "..."
+
                 if comm.cid == "hai":
                     gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
                         "hAI",
                         "Your helper AI",
-                        comm.history[-1].text if comm.history else "",
+                        last_text,
                         comm.cid,
                         f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
                     )
@@ -599,7 +613,7 @@ class UIManager:
                     gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
                         world.people[comm.recipient].name,
                         world.people[comm.recipient].title,
-                        comm.history[-1].text if comm.history else "",
+                        last_text,
                         comm.cid,
                         f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
                     )
@@ -607,6 +621,59 @@ class UIManager:
                     gc_image.image[0].png, gc_image.fill = world.people[comm.recipient].pid, COLORS["cyan_dead"]
 
         self.menu_refresh()
+
+    def convo_display(self):
+
+        if not self.click_history[-1] in (
+        "back_button", "convo_up", "convo_down", "convo_text_down", "convo_text_up", "convo_send"):
+            self.conv_scroll = 0
+            self.conv_txt_scroll = 0
+            self.viewed_comm = self.ui_lookup(self.click_history[-1]).text[3].text
+
+        comm = world.comms[self.viewed_comm]
+
+        self.ui_lookup("convo_header").text[0].text = world.people[comm.recipient].name if (
+                self.viewed_comm != "hai") else "hAI"
+        gcs = 4
+        start = -gcs * (self.conv_scroll + 1)
+        end = -gcs * self.conv_scroll if self.conv_scroll != 0 else None
+        texts = comm.transcript[start:end]
+        filled = 0
+        while filled < 4:
+            gc_l = self.ui_lookup(f"convo_grid_cell_l_{4 - filled}")
+            gc_l_pfp = self.ui_lookup(f"convo_grid_cell_l_pfp_{4 - filled}")
+            gc_r = self.ui_lookup(f"convo_grid_cell_r_{4 - filled}")
+            gc_r_pfp = self.ui_lookup(f"convo_grid_cell_r_pfp_{4 - filled}")
+
+            if filled >= len(texts):
+                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
+                gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
+                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
+                gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
+                filled += 1
+                continue
+
+            else:
+                text = texts[-1 - filled]
+                if text[2] == "right":
+                    gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
+                    gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
+                    gc_r.text[0].text, gc_r.text[1].text = text[0], text[1]
+                    gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender, COLORS["orange_dead"]
+                    filled += 1
+                    continue
+                elif text[2] == "left":
+                    gc_l.text[0].text, gc_l.text[1].text = text[0], (text[1] if text[1] else "")
+                    gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient, COLORS["cyan_dead"]
+                    gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
+                    gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
+                    filled += 1
+                    continue
+
+
+        self.check_scroll("convo", "cyan", len(comm.transcript), gcs, self.conv_scroll)
+
+
 
     def ui_lookup(self, ui_name: str) -> UI | None:
         for ui in UI.elements:

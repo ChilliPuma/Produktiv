@@ -75,7 +75,7 @@ def init_display():
     frame_lo_h = s(72)
     frame_mid_h = SQUARE_SIZE - (frame_hi_h + frame_lo_h)
     frame_hi_rect = (0, 0, SQUARE_SIZE, frame_hi_h)
-    frame_mid_rect = (-frame_border, frame_hi_h, SQUARE_SIZE+2*frame_border, frame_mid_h)
+    frame_mid_rect = (0, frame_hi_h, SQUARE_SIZE, frame_mid_h)
     frame_lo_rect = (0, SQUARE_SIZE - frame_lo_h, SQUARE_SIZE, frame_lo_h)
 
     font_topaz_xs = load_font("topaz.ttf", s(9))
@@ -86,6 +86,8 @@ def init_display():
     font_topaz_xl = load_font("topaz.ttf", s(56))
     font_topaz_xxl = load_font("topaz.ttf", s(72))
 
+    font_topaz_convo = load_font("topaz.ttf", s(24))
+
     FONTS = {
         "topaz_xs": font_topaz_xs,
         "topaz_s": font_topaz_s,
@@ -94,6 +96,8 @@ def init_display():
         "topaz_l": font_topaz_l,
         "topaz_xl": font_topaz_xl,
         "topaz_xxl": font_topaz_xxl,
+
+        "topaz_convo": font_topaz_convo
     }
 
     COLORS = {

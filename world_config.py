@@ -20,10 +20,15 @@ class CanContain(Enum):
     LIQUID = auto()
     GAS = auto()
 
-class CommType(Enum):
+class CommKind(Enum):
     AUTO = auto()
     STAFF = auto()
     NPC = auto()
+
+class Faction(Enum):
+    INDEPENDENT = auto()
+
+    MORMON = auto()
 
 class MssgType(Enum):
     GREETING = auto()
@@ -37,6 +42,9 @@ class MssgType(Enum):
     TASK_NEW = auto()
     TASK_THEN = auto()
     TASK_ONLY_THEN = auto()
+
+class Nation(Enum):
+    AMERICAN_WHITE = auto()
 
 class Sex(Enum):
     MALE = auto()
@@ -250,7 +258,8 @@ class Person:
         temperament: Temperament,
         facility: Facility = None,
         area: Area = None,
-        nation: str = "",
+        nation: Nation = None,
+        faction: Faction = None,
         title: str = "",
         ):
 
@@ -273,7 +282,7 @@ class Task:
 
         self.name = name
 
-class Mssg:
+class Message:
     def __init__(self,
         mid: str,
         comm: "Comm",
@@ -294,17 +303,17 @@ class Mssg:
 class Comm:
     def __init__(self,
         cid: str,
-        comm_type: CommType,
+        kind: CommKind,
         sender: str, #pid
         recipient: str #pid
         ):
 
         self.cid = cid
-        self.comm_type = comm_type
+        self.kind = kind
         self.sender = sender
         self.recipient = recipient
 
-        self.history: list[Mssg] = []
+        self.history: list[Message] = []
         self.transcript: list = [] #text, "left" or "right"
 
         self.ping: list[float] = [0.0, 2.0] #elapsed, req
@@ -312,13 +321,13 @@ class Comm:
 
         world.comms[self.cid] = self
 
-    def personalize(self, mssg_type: MssgType, sender: str, recipient: str) -> str:
+    def personalize(self, mssg_type: MessageKind, sender: str, recipient: str) -> str:
         possibilities = []
 
         for script in world.scripts.values():
             points = 0
 
-            if script.mssg_type != mssg_type:
+            if script.kind != mssg_type:
                 continue
 
             else:
@@ -340,21 +349,21 @@ class Comm:
 
     def can_send(self) -> dict:
         mssgs = {}
-        if self.comm_type == CommType.AUTO:
+        if self.comm_type == CommKind.AUTO:
             if self.history[-1].mssg_type in (MssgType.ACKNOWLEDGEMENT, MssgType.GREETING):
 
-                mssgs["new_task"] = Mssg(
+                mssgs["new_task"] = Message(
                     mid = "new_task",
                     comm = self,
                     sender = self.sender,
                     recipient = self.recipient,
-                    mssg_type = MssgType.TASK_NEW,
+                    mssg_type = MessageKind.TASK_NEW,
                     text = self.personalize(MssgType.TASK_NEW, self.sender, self.recipient)
                 )
 
         return mssgs
 
-    def send(self, mssg: Mssg):
+    def send(self, message: Message):
         mssg.timestamp = world.time
         self.history.append(mssg)
         for line in text_lines(mssg.text, 81):
@@ -405,7 +414,7 @@ def build_comms():
 
     world.comms["hai"] = Comm(
         cid = "hai",
-        comm_type = CommType.AUTO,
+        comm_type = CommKind.AUTO,
         sender = world.player.pid,
         recipient = "hai",
     )

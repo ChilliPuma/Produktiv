@@ -174,5 +174,20 @@
       }
 
     }
+  },
+
+  "comms": {
+    "": {
+      "cid": "",
+      "kind": "",
+      "sender": "",
+      "recipient": "",
+      "history": [
+        {
+          "mid" : ""
+        }
+      ]
+
+    }
   }
 }

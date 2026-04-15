@@ -1,5 +1,6 @@
 import loader
-from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament
+from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
+    Comm, CommKind
 
 
 def build_storage(data, world):
@@ -88,10 +89,9 @@ class Game:
                 facility=world.facilities[person["facility"]],
                 area=world.facilities[person["facility"].areas[person["area"]]],
                 nation=Nation(person["nation"]),
-                faction=
-                skills={Skill[skill]: qty for skill, qty in person["skills"].items()},
+                faction=Faction(person["faction"]),
                 temperament=Temperament[person["temperament"]],
-
+                skills={Skill[skill]: qty for skill, qty in person["skills"].items()}
             )
 
         for facility in data["facilities"].values():
@@ -103,5 +103,18 @@ class Game:
                 area.staff=[
                     world.people[pid] for pid in area["staff"]
                 ]
+
+        for comm in data["comms"].values():
+            world.comms[comm["fid"]]=Comm(
+                cid=comm["cid"],
+                kind=CommKind[comm["kind"]],
+                sender=comm["sender"],
+                recipient=comm["recipient"],
+                history=[
+                    Message(
+
+                    )
+                ]
+            )
 
         return world

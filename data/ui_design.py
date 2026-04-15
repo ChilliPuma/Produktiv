@@ -48,6 +48,7 @@ ui_back_button = UI(
     pos = (s(25), frame_lo_rect[1] + frame_lo_rect[3] / 2 - s(25)),
     size = (s(100), s(50)),
     fill = COLORS["yellow_lo"],
+    function = lambda: ui_manager.menu_back(),
     text = [
         Text(
             text = "<<<",
@@ -84,6 +85,7 @@ ui_start_continue = UI(
     size = (ui_start_title.size[0] - std_padding * 2, s(70)),
     fill = COLORS["yellow_lo"],
     layer = 1,
+    function = lambda: ui_manager.continue_game(),
     text = [
         Text(
             text = "Continue",
@@ -99,6 +101,7 @@ ui_start_saves = UI(
     size = ui_start_continue.size,
     fill = COLORS["yellow_mid"],
     layer = 1,
+    function = lambda: ui_manager.menu_switch("saves"),
     text = [
         Text(
             text = "Save menu",
@@ -113,6 +116,7 @@ ui_start_new_game = UI(
     size = ui_start_continue.size,
     fill = COLORS["yellow_mid"],
     layer = 1,
+    function = lambda: ui_manager.new_game(),
     text = [
         Text(
             text = "New game",
@@ -249,6 +253,7 @@ ui_main_facilities = UI(
     size = (SQUARE_SIZE // 2 - std_padding * 1.5, frame_mid_rect[3] // 2 - std_padding * 1.5),
     fill = COLORS["orange_dead"],
     layer = 1,
+    function = lambda: ui_manager.menu_switch("facilities"),
     text = [
         Text(
             text = "FACILITIES",
@@ -275,6 +280,7 @@ ui_main_comms = UI(
     size = ui_main_facilities.size,
     fill = COLORS["cyan_dead"],
     layer = 1,
+    function = lambda: ui_manager.menu_switch("comms"),
     text = [
             Text(
                 text = "COMMS",
@@ -467,6 +473,7 @@ for i in range(4):
                ui_facilities_image.pos[1] + row * (f_i_g_c_size[1] + frame_border * 2)),
         size = (f_i_g_c_size[0], s(147)),
         layer = 1,
+        function = lambda: ui_manager.menu_switch("item"),
         text = [
             Text(
                 text = "object",
@@ -525,6 +532,7 @@ ui_facilities_inventory_up = UI(
     size = (f_scroll_x, scroll_button_y),
     fill = COLORS["gray_lo"],
     layer = 1,
+    function = lambda: ui_manager.facilities_inventory_scroll(-1),
     text = [
         Text(
             text = "^",
@@ -542,6 +550,7 @@ ui_facilities_inventory_down = UI(
     size = ui_facilities_inventory_up.size,
     fill = COLORS["gray_lo"],
     layer = 1,
+    function = lambda: ui_manager.facilities_inventory_scroll(1),
     text = [
         Text(
             text = "^",
@@ -623,6 +632,7 @@ for i in range(4):
              i_c_g_c_pos[1] + frame_border + row * (i_c_g_c_size[1] + frame_border)),
         size = (ui_item_description.size[0] // 2 - frame_border, s(147)),
         layer = 1,
+        function = lambda: ui_manager.item_display(),
         text = [
             Text(
                 text = "object",
@@ -681,6 +691,7 @@ ui_item_contents_up = UI(
     size = (i_scroll_size_x, scroll_button_y),
     fill = COLORS["green_dead"],
     layer = 0,
+    function = lambda: ui_manager.item_contents_scroll(-1),
     text = [
         Text(
             text = "^",
@@ -698,6 +709,7 @@ ui_item_contents_down = UI(
     size = (i_scroll_size_x, scroll_button_y),
     fill = COLORS["green_dead"],
     layer = 0,
+    function = lambda: ui_manager.item_contents_scroll(1),
     text = [
         Text(
             text = "^",

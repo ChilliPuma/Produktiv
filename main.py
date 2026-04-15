@@ -1,7 +1,5 @@
 import pygame
 
-from change import change
-
 pygame.init()
 
 import logging
@@ -13,45 +11,13 @@ from visual_config import init_display
 init_display()
 from visual_config import OFFSET_X, OFFSET_Y, SQUARE_SIZE, game_surface, screen
 
-from world_config import world, TIME_SCALE, format_time
+from world_config import TIME_SCALE
 
 from ui_config import ui_manager
 
-from data.ui_design import (ui_back_button, ui_start_continue,
-                            ui_start_saves, ui_saves_new_save_button, ui_new_save_button, ui_start_new_game,
-                            ui_main_facilities, ui_facilities_inventory_up, ui_facilities_inventory_down, ui_main_comms,
-                            ui_item_contents_up, ui_item_contents_down, ui_time_bar)
-
-#UI functionality-----------------------------------------------------------------------------
-
-ui_back_button.function = lambda: ui_manager.menu_back()
-
-ui_start_saves.function = lambda: ui_manager.menu_switch("saves")
-ui_start_continue.function = lambda: ui_manager.continue_game()
-ui_start_new_game.function = lambda: ui_manager.new_game()
-
-ui_saves_new_save_button.function = lambda: ui_manager.menu_switch("new_save")
-
-ui_new_save_button.function = lambda: ui_manager.new_save(ui_manager.input_text)
-
-ui_main_facilities.function = lambda: ui_manager.menu_switch("facilities")
-ui_main_comms.function = lambda: ui_manager.menu_switch("comms")
-
-ui_facilities_inventory_up.function = lambda: ui_manager.facilities_inventory_scroll(-1)
-ui_facilities_inventory_down.function = lambda: ui_manager.facilities_inventory_scroll(1)
-
-ui_item_contents_up.function = lambda: ui_manager.item_contents_scroll(-1)
-ui_item_contents_down.function = lambda: ui_manager.item_contents_scroll(1)
-
-for i in range (4):
-    ui_manager.ui_lookup(f"facilities_inventory_grid_cell_{
-        i + 1}").function = lambda: ui_manager.menu_switch("item")
-    ui_manager.ui_lookup(f"item_contents_grid_cell_{
-        i + 1}").function = lambda: ui_manager.item_display()
-
-
-
 #main loop------------------------------------------------------------------------------------
+
+from change import change
 
 running = True
 clock = pygame.time.Clock()

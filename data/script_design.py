@@ -29,7 +29,6 @@ def build_scripts():
         mssg_type = MssgType.GREETING,
         sender = "hai"
     )
-    world.comms["hai"].script(world.scripts["GREETING_s:hai_1"], 60.0)
 
     world.scripts["TASK_NEW_r:hai"] = Script(
         sid = "TASK_NEW_r:hai",

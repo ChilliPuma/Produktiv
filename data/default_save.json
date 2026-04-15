@@ -1,0 +1,169 @@
+{
+  "objects": {
+    "": {
+      "oid": "",
+      "name": "",
+      "description": "",
+      "weight": 0,
+      "volume": 0,
+      "area": 0,
+      "substance": "",
+      "components": [
+        {
+          "oid": "",
+          "qty": 0
+        }
+      ],
+      "storage": {
+        "kind": "",
+        "max": 0,
+        "content": {}
+      },
+      "production": [
+        {
+          "oid": "",
+          "qty": 0,
+          "inputs": {
+            "oid": "",
+            "qty": 0,
+            "skills": [
+              {
+                "skill": "",
+                "qty": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+
+    "bike": {
+      "oid": "bike",
+      "name": "Bicycle",
+      "description": "A lightweight transport vehicle. It's ideal for smooth roads and low weight cargo.",
+      "weight": 10.0,
+      "volume": 1.0,
+      "area": 0.2,
+      "substance": null,
+      "components": [
+        {
+          "oid": "bike_handlebar",
+          "qty": 1
+        },
+        {
+          "oid": "bike_frame",
+          "qty": 1
+        },
+        {
+          "oid": "bike_seat",
+          "qty": 1
+        },
+        {
+          "oid": "bike_drivetrain",
+          "qty": 1
+        },
+        {
+          "oid": "bike_wheel",
+          "qty": 2
+        }
+      ],
+      "storage": null,
+      "production": null
+    },
+
+    "tube_steel": {
+      "oid": "tube_steel",
+      "name": "Steel tube",
+      "description": "An essential part for many items, strong and versatile",
+      "weight": 1.0,
+      "volume": 0.001,
+      "area": 0.05,
+      "substance": "steel",
+      "components": null,
+      "storage": null,
+      "production": null
+    }
+  },
+
+  "facilities": {
+    "": {
+      "fid": "",
+      "name": "",
+      "location": "",
+      "areas": [
+        {
+          "aid": "",
+          "name": "",
+          "level": 0,
+          "area": 0.0,
+          "staff_max": 0,
+          "inventory": []
+        }
+      ],
+      "power": 0.0
+    },
+
+    "shed_backyard": {
+      "fid": "shed_backyard",
+      "name": "Backyard shed",
+      "location": "Tiffin - Ohio, USA",
+      "areas": [
+        {
+          "aid": "interior",
+          "name": "Interior",
+          "level": 0,
+          "area": 28.0,
+          "staff_max": 5,
+          "inventory": []
+        },
+        {
+          "aid": "exterior",
+          "name": "Yard",
+          "level": 0,
+          "area": 110.0,
+          "staff_max": 30,
+          "inventory": []
+        }
+      ],
+      "power": 2000.0
+    }
+  },
+
+  "people": {
+    "": {
+      "pid": "",
+      "name": "",
+      "title": "",
+      "age": 0,
+      "sex": "",
+      "nation": "",
+      "faction": "",
+      "temperament": "",
+      "skills": {
+        "fit": 0.0,
+        "vit": 0.0,
+        "soc": 0.0,
+        "int": 0.0
+      }
+
+    },
+
+    "smith_guy": {
+      "pid": "smith_guy",
+      "name": "Guy Smith",
+      "title": "Dropout Engineer",
+      "age": 28,
+      "sex": "MALE",
+      "nation": "AMERICAN_WHITE",
+      "faction": "INDEPENDENT",
+      "temperament": "",
+      "skills": {
+        "fit": 0.0,
+        "vit": 0.0,
+        "soc": 0.0,
+        "int": 0.0
+      }
+
+    }
+  }
+}

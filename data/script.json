@@ -1,0 +1,19 @@
+{
+  "script": {
+    "": {
+      "sid": "",
+      "kind": "",
+      "text": "",
+      "sender": "",
+      "recipient": ""
+    },
+
+    "GREETING_s:hai_1": {
+      "sid": "GREETING_s:hai_1",
+      "kind": "GREETING",
+      "text": "Greetings, how may I assist you today?",
+      "sender": "hai",
+      "recipient": ""
+    }
+  }
+}

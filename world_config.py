@@ -188,6 +188,7 @@ class Area:
         aid: str,
         level: int = 0,
         area: float = 4.0, # m²
+        staff_max: int = 1,
         inventory: list[Object] = None,
         ):
 
@@ -195,6 +196,7 @@ class Area:
         self.aid = aid
         self.level = level
         self.area = area
+        self.staff_max = staff_max
         self.inventory = inventory or []
 
         self.staff: dict[str, "Person"] = {} # pid, person
@@ -206,7 +208,6 @@ class Facility:
         fid: str,
         name: str,
         areas: dict[str, Area],  # area name, m²]
-        staff_max: int,
         power: float, # W
         location: tuple[tuple, str],  # (x,y), (City, Country)
         owner: str = None):
@@ -214,7 +215,6 @@ class Facility:
         self.fid = fid
         self.name = name
         self.areas = areas
-        self.staff_capacity = staff_max
         self.power = power
         self.location = location
         self.owner = owner if owner else ""
@@ -235,6 +235,12 @@ class Facility:
 
         return used_area
 
+    def staff_max(self) -> int:
+        total = 0
+        for a in self.areas.values():
+            total += a.staff_max
+        return total
+
     def total_staff(self) -> int:
         total = 0
         for a in self.areas.values():
@@ -250,7 +256,7 @@ class Person:
         pid: str,
         sex: Sex,
         age: int,
-        homeland: str,
+        nation: str,
         skills: dict[Skill, float], # max 10
         temperament: Temperament,
         title: str = "",
@@ -261,7 +267,7 @@ class Person:
         self.pid = pid
         self.sex = sex
         self.age = age
-        self.homeland = homeland
+        self.nation = nation
         self.skills = skills
         self.temperament = temperament
         self.title = title

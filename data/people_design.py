@@ -8,7 +8,7 @@ def build_people():
         pid = "smith_guy",
         sex = Sex.MALE,
         age = 27,
-        homeland = "Tiffin - Ohio, USA",
+        nation = "Tiffin - Ohio, USA",
         skills = {
             Skill.FIT: 3.0,
             Skill.VIT: 4.2,

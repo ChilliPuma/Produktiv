@@ -45,9 +45,9 @@ def build_story():
     global story
     story = {
         "hai_intro": Event(
-        eid="hai_intro",
-        function=world.comms["hai"].receive(world.scripts["GREETING_s:hai_1"]),
-        time=60.0
+        eid = "hai_intro",
+        function = lambda: world.comms["hai"].receive(world.scripts["GREETING_s:hai_1"]),
+        time = 60.0
         )
     }
 

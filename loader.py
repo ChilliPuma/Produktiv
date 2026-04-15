@@ -14,6 +14,10 @@ from visual_config import BASE_DIR
 
 saves_dir = BASE_DIR / "saves"
 
+def load_default():
+    with open(BASE_DIR / "data/default_save.json") as f:
+        return json.load(f)
+
 def new_save(save_file_name: str):
     if not save_file_name:
         save_file_name = f"{datetime.now():%Y%m%d_%H%M%S}"
@@ -88,7 +92,7 @@ def serialize_person(p: Person) -> dict:
         "id": p.pid,
         "name": p.name,
         "age": p.age,
-        "homeland": p.homeland,
+        "homeland": p.nation,
         "skills": {
             skill.name: value for skill, value in p.skills.items()
         },

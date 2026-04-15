@@ -16,7 +16,7 @@
       ],
       "storage": {
         "kind": "",
-        "max": 0,
+        "max": 0.0,
         "content": {}
       },
       "production": [
@@ -42,9 +42,9 @@
       "name": "Bicycle",
       "description": "A lightweight transport vehicle. It's ideal for smooth roads and low weight cargo.",
       "weight": 10.0,
-      "volume": 1.0,
+      "volume": 1000.0,
       "area": 0.2,
-      "substance": null,
+      "substance": "COMPOSITE",
       "components": [
         {
           "oid": "bike_handlebar",
@@ -67,8 +67,8 @@
           "qty": 2
         }
       ],
-      "storage": null,
-      "production": null
+      "storage": {},
+      "production": {}
     },
 
     "tube_steel": {
@@ -76,12 +76,12 @@
       "name": "Steel tube",
       "description": "An essential part for many items, strong and versatile",
       "weight": 1.0,
-      "volume": 0.001,
+      "volume": 1.0,
       "area": 0.05,
-      "substance": "steel",
-      "components": null,
-      "storage": null,
-      "production": null
+      "substance": "STEEL",
+      "components": [],
+      "storage": {},
+      "production": {}
     }
   },
 
@@ -90,12 +90,14 @@
       "fid": "",
       "name": "",
       "location": "",
+      "staff": [],
       "areas": [
         {
           "aid": "",
           "name": "",
           "level": 0,
           "area": 0.0,
+          "staff": [],
           "staff_max": 0,
           "inventory": []
         }
@@ -107,12 +109,14 @@
       "fid": "shed_backyard",
       "name": "Backyard shed",
       "location": "Tiffin - Ohio, USA",
+      "owner": "smith_guy",
       "areas": [
         {
           "aid": "interior",
           "name": "Interior",
           "level": 0,
           "area": 28.0,
+          "staff": ["smith_guy"],
           "staff_max": 5,
           "inventory": []
         },
@@ -121,6 +125,7 @@
           "name": "Yard",
           "level": 0,
           "area": 110.0,
+          "staff": [],
           "staff_max": 30,
           "inventory": []
         }
@@ -136,6 +141,8 @@
       "title": "",
       "age": 0,
       "sex": "",
+      "facility": "",
+      "area": "",
       "nation": "",
       "faction": "",
       "temperament": "",
@@ -154,9 +161,11 @@
       "title": "Dropout Engineer",
       "age": 28,
       "sex": "MALE",
+      "facility": "shed_backyard",
+      "area": "shed_backyard",
       "nation": "AMERICAN_WHITE",
       "faction": "INDEPENDENT",
-      "temperament": "",
+      "temperament": "PHLEGMATIC",
       "skills": {
         "fit": 0.0,
         "vit": 0.0,

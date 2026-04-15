@@ -130,7 +130,7 @@ class World:
 
 world = World()
 
-#Objects--------------------------------------------------------------------
+#Entities --------------------------------------------------------------------
 
 class Object:
     def __init__(self,
@@ -141,16 +141,13 @@ class Object:
                  area: float, # m²
                  substance: Substance = None,
                  components: dict[str, int] = None,
-                 can_contain: dict[CanContain, tuple[
-                     float, float]] = None,  # weight, volume
-                 contents: dict[Substance, float] = None,
-                 storage: list["Object"] = None,
-                 can_produce: dict[
-                     str, float] = None,
+                 storage: dict = None,
+                 production: list[dict] = None,
                  description: str = ""):  # ingame secs
 
         self.oid = oid
         self.name = name
+        self.description = description
 
         self.weight = weight
         self.volume = volume
@@ -158,15 +155,8 @@ class Object:
         self.substance = (
                 substance or Substance.COMPOSITE)
         self.components = components or {}
-
-        self.can_contain = can_contain or {
-            CanContain.NONE: (0.0, 0.0)}
-        self.contents = contents or {}
-        self.storage = storage or []
-
-        self.can_produce = can_produce or {}
-
-        self.description = description
+        self.storage = storage or {}
+        self.production = production or []
 
     def create(self, *kwargs):
         created_obj = copy.deepcopy(self)
@@ -188,6 +178,7 @@ class Area:
         aid: str,
         level: int = 0,
         area: float = 4.0, # m²
+        staff: list["Person"] = None,
         staff_max: int = 1,
         inventory: list[Object] = None,
         ):
@@ -196,10 +187,9 @@ class Area:
         self.aid = aid
         self.level = level
         self.area = area
+        self.staff = staff or []
         self.staff_max = staff_max
         self.inventory = inventory or []
-
-        self.staff: dict[str, "Person"] = {} # pid, person
 
 #Facilities-------------------------------------------------------
 
@@ -210,6 +200,7 @@ class Facility:
         areas: dict[str, Area],  # area name, m²]
         power: float, # W
         location: tuple[tuple, str],  # (x,y), (City, Country)
+        staff: list["Person"] = None,
         owner: str = None):
 
         self.fid = fid
@@ -217,6 +208,7 @@ class Facility:
         self.areas = areas
         self.power = power
         self.location = location
+        self.staff = staff or []
         self.owner = owner if owner else ""
 
         self.total_area: float = 0.0
@@ -248,32 +240,30 @@ class Facility:
             total += s
         return total
 
-#people ---------------------------------------------------------------------------------------------
-
 class Person:
     def __init__(self,
         name: str,
         pid: str,
         sex: Sex,
         age: int,
-        nation: str,
         skills: dict[Skill, float], # max 10
         temperament: Temperament,
+        facility: Facility = None,
+        area: Area = None,
+        nation: str = "",
         title: str = "",
-        location: Area = None
         ):
 
         self.name = name
         self.pid = pid
         self.sex = sex
         self.age = age
+        self.facility = facility
+        self.area = area
         self.nation = nation
         self.skills = skills
         self.temperament = temperament
         self.title = title
-        self.location = location
-
-        world.people[pid] = self
 
 class Task:
     def __init__(self,

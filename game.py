@@ -85,8 +85,13 @@ class Game:
                 name=person["name"],
                 age=person["age"],
                 sex=Sex[person["sex"]],
+                facility=world.facilities[person["facility"]],
+                area=world.facilities[person["facility"].areas[person["area"]]],
+                nation=Nation(person["nation"]),
+                faction=
                 skills={Skill[skill]: qty for skill, qty in person["skills"].items()},
                 temperament=Temperament[person["temperament"]],
+
             )
 
         for facility in data["facilities"].values():

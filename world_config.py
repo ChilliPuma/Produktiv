@@ -284,21 +284,12 @@ class Task:
 
 class Message:
     def __init__(self,
-        mid: str,
-        comm: "Comm",
-        sender: str, #pid
-        recipient: str, #pid
-        mssg_type: MssgType,
+        sid: str,
         text: str,
-        timestamp: float = 0.0
         ):
 
-        self.mid = mid
-        self.sender = sender
-        self.recipient = recipient
-        self. mssg_type = mssg_type
+        self.sid = sid
         self.text = text
-        self.timestamp = timestamp
 
 class Comm:
     def __init__(self,
@@ -306,6 +297,7 @@ class Comm:
         kind: CommKind,
         sender: str, #pid
         recipient: str #pid
+        history:
         ):
 
         self.cid = cid
@@ -313,13 +305,10 @@ class Comm:
         self.sender = sender
         self.recipient = recipient
 
-        self.history: list[Message] = []
+        self.history: list[tuple[Message, bool, float]] = []
         self.transcript: list = [] #text, "left" or "right"
 
         self.ping: list[float] = [0.0, 2.0] #elapsed, req
-        self.scripted: list = [] #Mssg, t-
-
-        world.comms[self.cid] = self
 
     def personalize(self, mssg_type: MessageKind, sender: str, recipient: str) -> str:
         possibilities = []

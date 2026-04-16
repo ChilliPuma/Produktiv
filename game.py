@@ -1,6 +1,8 @@
+from pyexpat.errors import messages
+
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind
+    Comm, CommKind, Message
 
 
 def build_storage(data, world):
@@ -29,6 +31,8 @@ def build_storage(data, world):
 class Game:
     def __init__(self):
         self.world = None
+        self.script = loader.load_script()
+
 
     def new_game(self):
         data = loader.load_default()
@@ -44,6 +48,7 @@ class Game:
 
     def build_world(self, data):
         world=World()
+        script={}
 
         for obj in data["objects"].values():
             world.objects[obj["oid"]] = Object(
@@ -104,6 +109,17 @@ class Game:
                     world.people[pid] for pid in area["staff"]
                 ]
 
+        for message in self.script["messages"]:
+            script = {
+                "messages": {
+                    "mid": message["mid"],
+                    "kind": MessageKind[message["kind"]],
+                    "text": message["text"],
+                    "sender": world.people[message["sender"] if message["sender"] else None],
+                    "recipient": world.people[message["recipient"] if message["recipient"] else None],
+                }
+            }
+
         for comm in data["comms"].values():
             world.comms[comm["fid"]]=Comm(
                 cid=comm["cid"],
@@ -111,9 +127,7 @@ class Game:
                 sender=comm["sender"],
                 recipient=comm["recipient"],
                 history=[
-                    Message(
-
-                    )
+                    ()
                 ]
             )
 

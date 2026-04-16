@@ -184,7 +184,15 @@
       "recipient": "",
       "history": [
         {
-          "mid" : ""
+          "sid": "",
+          "received": false,
+          "timestamp": 0.0,
+          "text": ""
+        }
+      ],
+      "transcript": [
+        {
+          "": ""
         }
       ]
 

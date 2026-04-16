@@ -18,6 +18,10 @@ def load_default():
     with open(BASE_DIR / "data/default_save.json") as f:
         return json.load(f)
 
+def load_script():
+    with open(BASE_DIR / "data/script.json") as f:
+        return json.load(f)
+
 def new_save(save_file_name: str):
     if not save_file_name:
         save_file_name = f"{datetime.now():%Y%m%d_%H%M%S}"

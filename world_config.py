@@ -30,7 +30,7 @@ class Faction(Enum):
 
     MORMON = auto()
 
-class MssgType(Enum):
+class MessageKind(Enum):
     GREETING = auto()
     ACKNOWLEDGEMENT = auto()
 
@@ -296,22 +296,41 @@ class Comm:
         cid: str,
         kind: CommKind,
         sender: str, #pid
-        recipient: str #pid
-        history:
+        recipient: str, #pid
+        history: list[tuple[str, bool, float]] = None, #mid, received, timestamp
+        ping: float=2.0
         ):
 
-        self.cid = cid
-        self.kind = kind
-        self.sender = sender
-        self.recipient = recipient
+        self.cid=cid
+        self.kind=kind
+        self.sender=sender
+        self.recipient=recipient
 
-        self.history: list[tuple[Message, bool, float]] = []
-        self.transcript: list = [] #text, "left" or "right"
+        self.history: list[tuple[str, bool, float]]=history if history is not None else [] #mid, received, timestamp
+        self.transcript: list=[] #text, "left" or "right", "timestamp"
 
-        self.ping: list[float] = [0.0, 2.0] #elapsed, req
+        self.ping=ping
+
+        self.char=81
+
+    def transcribe(self, add: tuple[str, bool, float]):
+        if add:
+            lines = text_lines(add[0], self.char)
+            if add[1]:
+                for line in lines:
+                    self.transcript.append((line, "left", add[2]))
+            else:
+                for line in lines:
+                    self.transcript.append((line, "right", add[2]))
+        elif self.history:
+            self.transcript = []
+            for message in self.history:
+                self.transcribe(message)
+        else:
+            return
 
     def personalize(self, mssg_type: MessageKind, sender: str, recipient: str) -> str:
-        possibilities = []
+        possibilities=[]
 
         for script in world.scripts.values():
             points = 0
@@ -338,8 +357,8 @@ class Comm:
 
     def can_send(self) -> dict:
         mssgs = {}
-        if self.comm_type == CommKind.AUTO:
-            if self.history[-1].mssg_type in (MssgType.ACKNOWLEDGEMENT, MssgType.GREETING):
+        if self.kind == CommKind.AUTO:
+            if self.history[-1].kind in (MessageKind.ACKNOWLEDGEMENT, MessageKind.GREETING):
 
                 mssgs["new_task"] = Message(
                     mid = "new_task",
@@ -352,52 +371,17 @@ class Comm:
 
         return mssgs
 
-    def send(self, message: Message):
-        mssg.timestamp = world.time
-        self.history.append(mssg)
-        for line in text_lines(mssg.text, 81):
-            self.transcript.append((line, mssg.timestamp, "right"))
-        self.ping[0] = 0.0
-        world.processes.append(self)
+    def send(self, message: tuple[str, bool, float]):
+        self.history.append(message)
+        self.transcribe(message)
+        game.send_message(self, message)
 
-    def receive(self, mssg: Mssg):
-        self.history.append(mssg)
-        for line in text_lines(mssg.text, 81):
-            self.transcript.append((line, mssg.timestamp, "left"))
+    def receive(self, message: tuple[str, bool, float]):
+        self.history.append(message)
+        self.transcribe(message)
 
-    def response(self, mssg: Mssg):
+    def response(self, message: tuple[str, bool, float]):
         pass
-
-    def script(self, script: "Script", time: float):
-        mssg = Mssg(
-            mid = script.sid,
-            mssg_type = script.mssg_type,
-            comm = self,
-            sender = self.recipient,
-            recipient = self.sender,
-            text = script.text
-        )
-        self.scripted.append((mssg, time))
-        world.processes.append(self) if self not in world.processes else None
-
-    def tick(self, dt: float):#seconds
-        print(self.scripted)
-        if self.ping[0] < self.ping[1]:
-            self.ping[0] += dt
-
-        elif self.scripted:
-            new_scripted = []
-            for mssg, time in self.scripted:
-                if time - dt <= 0:
-                    self.receive(mssg)
-                else:
-                    time -= dt
-                    new_scripted.append((mssg, time))
-            self.scripted = new_scripted
-
-        else:
-            world.processes.remove(self)
-            self.response(self.history[-1]) if self.history[-1].sender == self.sender else None
 
 def build_comms():
 

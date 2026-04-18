@@ -1,8 +1,6 @@
-from pyexpat.errors import messages
-
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind, Message
+    Comm, CommKind, Message, MessageKind
 
 
 def build_storage(data, world):
@@ -27,6 +25,8 @@ def build_storage(data, world):
         }
     else:
         return {}
+
+
 
 class Game:
     def __init__(self):
@@ -110,25 +110,28 @@ class Game:
                 ]
 
         for message in self.script["messages"]:
-            script = {
-                "messages": {
-                    "mid": message["mid"],
-                    "kind": MessageKind[message["kind"]],
-                    "text": message["text"],
-                    "sender": world.people[message["sender"] if message["sender"] else None],
-                    "recipient": world.people[message["recipient"] if message["recipient"] else None],
-                }
+            script["messages"][message["mid"]] = {
+                "mid": message["mid"],
+                "kind": MessageKind[message["kind"]],
+                "text": message["text"],
+                "sender": world.people[message["sender"] if message["sender"] else None],
+                "recipient": world.people[message["recipient"] if message["recipient"] else None]
             }
 
         for comm in data["comms"].values():
             world.comms[comm["fid"]]=Comm(
                 cid=comm["cid"],
                 kind=CommKind[comm["kind"]],
-                sender=comm["sender"],
-                recipient=comm["recipient"],
+                sender=world.people[comm["sender"]],
+                recipient=world.people[comm["recipient"]],
                 history=[
-                    ()
-                ]
+                    (
+                        message["mid"],
+                        message["received"],
+                        message["timestamp"]
+                    ) for message in comm["history"]
+                ],
+                ping=comm["ping"]
             )
 
         return world

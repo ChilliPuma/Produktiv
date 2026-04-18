@@ -51,8 +51,8 @@ def serialize_object(obj: Object) -> dict:
         "volume": obj.volume,
         "substance": obj.substance.name,
         "components": {
-            component_oid: qty
-            for component_oid, qty in obj.components.items()
+            oid: qty
+            for oid, qty in obj.components.items()
         },
         "can_contain": {
             content_type.name: qty

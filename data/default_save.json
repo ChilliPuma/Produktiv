@@ -184,7 +184,7 @@
       "recipient": "",
       "history": [
         {
-          "sid": "",
+          "mid": "",
           "received": false,
           "timestamp": 0.0,
           "text": ""
@@ -194,8 +194,17 @@
         {
           "": ""
         }
-      ]
+      ],
+      "ping": 0.0
 
     }
+  },
+
+  "flags": {
+    
+  },
+
+  "states": {
+    "player": "smith_guy"
   }
 }

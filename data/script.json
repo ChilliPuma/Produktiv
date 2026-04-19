@@ -1,13 +1,5 @@
 {
   "messages": {
-    "": {
-      "mid": "",
-      "kind": "",
-      "text": "",
-      "sender": "",
-      "recipient": ""
-    },
-
     "GREETING_s:hai_1": {
       "mid": "GREETING_s:hai_1",
       "kind": "GREETING",

@@ -1,41 +1,5 @@
 {
   "objects": {
-    "": {
-      "oid": "",
-      "name": "",
-      "description": "",
-      "weight": 0,
-      "volume": 0,
-      "area": 0,
-      "substance": "",
-      "components": [
-        {
-          "oid": "",
-          "qty": 0
-        }
-      ],
-      "storage": {
-        "kind": "",
-        "max": 0.0,
-        "content": {}
-      },
-      "production": [
-        {
-          "oid": "",
-          "qty": 0,
-          "inputs": {
-            "oid": "",
-            "qty": 0,
-            "skills": [
-              {
-                "skill": "",
-                "qty": 0
-              }
-            ]
-          }
-        }
-      ]
-    },
 
     "bike": {
       "oid": "bike",
@@ -86,41 +50,25 @@
   },
 
   "facilities": {
-    "": {
-      "fid": "",
-      "name": "",
-      "location": "",
-      "staff": [],
-      "areas": [
-        {
-          "aid": "",
-          "name": "",
-          "level": 0,
-          "area": 0.0,
-          "staff": [],
-          "staff_max": 0,
-          "inventory": []
-        }
-      ],
-      "power": 0.0
-    },
 
     "shed_backyard": {
       "fid": "shed_backyard",
       "name": "Backyard shed",
       "location": "Tiffin - Ohio, USA",
       "owner": "smith_guy",
-      "areas": [
-        {
-          "aid": "interior",
-          "name": "Interior",
-          "level": 0,
-          "area": 28.0,
-          "staff": ["smith_guy"],
-          "staff_max": 5,
-          "inventory": []
+      "areas": {
+        "interior": {
+        "aid": "interior",
+        "name": "Interior",
+        "level": 0,
+        "area": 28.0,
+        "staff": [
+          "smith_guy"
+        ],
+        "staff_max": 5,
+        "inventory": []
         },
-        {
+        "exterior": {
           "aid": "exterior",
           "name": "Yard",
           "level": 0,
@@ -129,31 +77,12 @@
           "staff_max": 30,
           "inventory": []
         }
-      ],
+      },
       "power": 2000.0
     }
   },
 
   "people": {
-    "": {
-      "pid": "",
-      "name": "",
-      "title": "",
-      "age": 0,
-      "sex": "",
-      "facility": "",
-      "area": "",
-      "nation": "",
-      "faction": "",
-      "temperament": "",
-      "skills": {
-        "fit": 0.0,
-        "vit": 0.0,
-        "soc": 0.0,
-        "int": 0.0
-      }
-
-    },
 
     "smith_guy": {
       "pid": "smith_guy",
@@ -162,40 +91,31 @@
       "age": 28,
       "sex": "MALE",
       "facility": "shed_backyard",
-      "area": "shed_backyard",
+      "area": "interior",
       "nation": "AMERICAN_WHITE",
       "faction": "INDEPENDENT",
       "temperament": "PHLEGMATIC",
       "skills": {
-        "fit": 0.0,
-        "vit": 0.0,
-        "soc": 0.0,
-        "int": 0.0
+        "FIT": 0.0,
+        "VIT": 0.0,
+        "SOC": 0.0,
+        "INT": 0.0
       }
 
     }
   },
 
   "comms": {
-    "": {
-      "cid": "",
-      "kind": "",
-      "sender": "",
-      "recipient": "",
+    "hai": {
+      "cid": "hai",
+      "kind": "HAI",
+      "sender": "smith_guy",
+      "recipient": "hai",
       "history": [
-        {
-          "mid": "",
-          "received": false,
-          "timestamp": 0.0,
-          "text": ""
-        }
       ],
       "transcript": [
-        {
-          "": ""
-        }
       ],
-      "ping": 0.0
+      "ping": 1.0
 
     }
   },

@@ -1,7 +1,7 @@
 import json
 import logging
 
-from loader import saves_dir, new_save
+from loader import saves_dir, load_default
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +12,9 @@ from collections import deque
 
 from visual_config import COLORS, FONTS, std_padding, BASE_DIR
 
-from world_config import world, build_default_world, format_time, text_lines
+from world_config import format_time
+
+from game import game
 
 
 def unify(qty: float, unit: str) -> str:
@@ -318,7 +320,8 @@ class UIManager:
         if menu_name == "start":
             self.perma_ui_color_switch("yellow")
             self.menu_history.clear()
-            world.time_stop = True
+            if game.world:
+                game.world.time_stop = True
 
         elif menu_name == "saves":
             self.perma_ui_color_switch("blue")
@@ -389,7 +392,7 @@ class UIManager:
 
             self.facility_inv_scroll = 0
 
-            self.facilities_display(world.owned_facilities[self.viewed_facility])
+            self.facilities_display(game.world.owned_facilities[self.viewed_facility])
 
         elif menu_name == "item":
 
@@ -514,7 +517,7 @@ class UIManager:
         "back_button", "item_contents_up", "item_contents_down"):
             item = self.viewed_item_history[-1]
         else:
-            item = world.objects[self.ui_lookup(self.click_history[-1]).text[3].text]
+            item = game.world.objects[self.ui_lookup(self.click_history[-1]).text[3].text]
             self.item_cont_scroll = 0
             self.viewed_item_history.append(item)
 
@@ -572,9 +575,9 @@ class UIManager:
             self.cmms_scroll = 0
 
         contacts = [
-            (comm, comm.history[-1].timestamp if comm.history else None) for comm in world.comms.values()
+            (comm, comm.history[-1].timestamp if comm.history else None) for comm in game.world.comms.values()
         ]
-        contacts.sort(key = lambda c: (c[0] != world.comms["hai"], -(c[1] or 0)))
+        contacts.sort(key = lambda c: (c[0] != game.world.comms["hai"], -(c[1] or 0)))
 
         gcs = 3
 
@@ -611,14 +614,14 @@ class UIManager:
 
                 else:
                     gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
-                        world.people[comm.recipient].name,
-                        world.people[comm.recipient].title,
+                        game.world.people[comm.recipient].name,
+                        game.world.people[comm.recipient].title,
                         last_text,
                         comm.cid,
                         f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
                     )
                     gc.fill = COLORS["cyan_lo"]
-                    gc_image.image[0].png, gc_image.fill = world.people[comm.recipient].pid, COLORS["cyan_dead"]
+                    gc_image.image[0].png, gc_image.fill = game.world.people[comm.recipient].pid, COLORS["cyan_dead"]
 
         self.menu_refresh()
 
@@ -630,9 +633,9 @@ class UIManager:
             self.conv_txt_scroll = 0
             self.viewed_comm = self.ui_lookup(self.click_history[-1]).text[3].text
 
-        comm = world.comms[self.viewed_comm]
+        comm = game.world.comms[self.viewed_comm]
 
-        self.ui_lookup("convo_header").text[0].text = world.people[comm.recipient].name if (
+        self.ui_lookup("convo_header").text[0].text = game.world.people[comm.recipient].name if (
                 self.viewed_comm != "hai") else "hAI"
         gcs = 4
         start = -gcs * (self.conv_scroll + 1)
@@ -695,7 +698,6 @@ class UIManager:
 
     def new_save_button(self, save_file_name: str):
 
-        new_save(save_file_name)
         self.menu_switch("saves")
 
     def game_load(self):
@@ -707,7 +709,7 @@ class UIManager:
                 fill=COLORS["yellow_mid"])
 
         self.game_loaded = True
-        world.time_stop = False
+        game.world.time_stop = False
 
         self.menu_switch("main")
 
@@ -716,7 +718,7 @@ class UIManager:
 
     def new_game(self):
 
-        build_default_world()
+        game.build_world(load_default())
 
         self.game_load()
 
@@ -736,7 +738,7 @@ class UIManager:
                 return
 
         self.facility_inv_scroll += scroll
-        self.facilities_display(world.owned_facilities[self.viewed_facility])
+        self.facilities_display(game.world.owned_facilities[self.viewed_facility])
         self.menu_refresh()
 
     def item_contents_scroll(self, scroll:int):

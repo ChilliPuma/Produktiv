@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 from ui_config import UI, Text, Image, ui_manager
 from visual_config import COLORS, FONTS, SQUARE_SIZE, frame_mid_rect, frame_lo_rect, frame_hi_rect, s, frame_hi_h, \
     frame_border, std_padding, std_dist
-from world_config import world, format_time, format_time_short
+from world_config import format_time_short
 
 #permanent UI elements------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ ui_time_bar = UI(
     fill = COLORS["black"],
     text = [
         Text(
-            text = (format_time(world.time)),
+            text = "time",
             font = FONTS["topaz_m"],
             color = COLORS["white"]
       )

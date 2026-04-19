@@ -1,9 +1,7 @@
 import logging
-import random
 
 log = logging.getLogger(__name__)
 
-import copy, uuid
 from enum import Enum, auto
 
 
@@ -21,7 +19,7 @@ class CanContain(Enum):
     GAS = auto()
 
 class CommKind(Enum):
-    AUTO = auto()
+    HAI = auto()
     STAFF = auto()
     NPC = auto()
 
@@ -110,7 +108,6 @@ class World:
                  people: dict[str, "Person"] = None,
                  player: "Person" = None,
                  comms: dict[str, "Comm"] = None,
-                 scripts: dict[str, "Script"] = None,
                  time: float = 0):
         self.facilities = facilities if facilities else {}
         self.owned_facilities = []
@@ -118,25 +115,11 @@ class World:
         self.people = people if people else {}
         self.player = player
         self.comms = comms if comms else {}
-        self.scripts = scripts if scripts else {}
 
         self.time = time  # seconds
         self.time_stop = True
 
         self.processes: list = []
-
-    def tick(self, dt: float):
-
-        if self.time_stop:
-            return
-        self.time += dt
-
-        for process in self.processes:
-            process.tick(dt)
-
-
-
-world = World()
 
 #Entities --------------------------------------------------------------------
 
@@ -165,12 +148,6 @@ class Object:
         self.components = components or {}
         self.storage = storage or {}
         self.production = production or []
-
-    def create(self, *kwargs):
-        created_obj = copy.deepcopy(self)
-        created_obj.oid += f"_{str(uuid.uuid4())}"
-        world.objects[created_obj.oid] = created_obj
-        return created_obj
 
     def total_weight(self):
         total = self.weight
@@ -223,10 +200,6 @@ class Facility:
         for area_name, area in self.areas.items():
             self.total_area += area.area
 
-        self.tasks: list[Task] = []
-
-        world.facilities[fid] = self
-
     def used_area(self) -> float:
         used_area = 0.0
         for a_name, area in self.areas.items():
@@ -274,23 +247,6 @@ class Person:
         self.temperament = temperament
         self.title = title
 
-class Task:
-    def __init__(self,
-        name: str,
-        tid: str,
-        ):
-
-        self.name = name
-
-class Message:
-    def __init__(self,
-        sid: str,
-        text: str,
-        ):
-
-        self.sid = sid
-        self.text = text
-
 class Comm:
     def __init__(self,
         cid: str,
@@ -329,87 +285,7 @@ class Comm:
         else:
             return
 
-    def personalize(self, mssg_type: MessageKind, sender: str, recipient: str) -> str:
-        possibilities=[]
-
-        for script in world.scripts.values():
-            points = 0
-
-            if script.kind != mssg_type:
-                continue
-
-            else:
-                if script.sender == sender:
-                    points += 1
-                elif script.sender and sender != script.sender:
-                    continue
-                if script.recipient == recipient:
-                    points += 1
-                elif script.recipient and recipient != script.recipient:
-                    continue
-
-            possibilities.append((script, points))
-
-        possibilities.sort(key = lambda x: x[1], reverse = True)
-
-        choice = random.choice(possibilities)[:3]
-        return choice[0]
-
-    def can_send(self) -> dict:
-        mssgs = {}
-        if self.kind == CommKind.AUTO:
-            if self.history[-1].kind in (MessageKind.ACKNOWLEDGEMENT, MessageKind.GREETING):
-
-                mssgs["new_task"] = Message(
-                    mid = "new_task",
-                    comm = self,
-                    sender = self.sender,
-                    recipient = self.recipient,
-                    mssg_type = MessageKind.TASK_NEW,
-                    text = self.personalize(MssgType.TASK_NEW, self.sender, self.recipient)
-                )
-
-        return mssgs
-
-    def send(self, message: tuple[str, bool, float]):
-        self.history.append(message)
-        self.transcribe(message)
-        game.send_message(self, message)
-
     def receive(self, message: tuple[str, bool, float]):
         self.history.append(message)
         self.transcribe(message)
-
-    def response(self, message: tuple[str, bool, float]):
-        pass
-
-def build_comms():
-
-    world.comms["hai"] = Comm(
-        cid = "hai",
-        comm_type = CommKind.AUTO,
-        sender = world.player.pid,
-        recipient = "hai",
-    )
-
-#build world---------------------------------------------------------------------------------------
-
-from data.facilities_design import build_facilities
-from data.objects_design import build_objects
-from data.people_design import build_people
-from data.script_design import Script, build_scripts
-
-def build_default_world():
-    world.facilities = {}
-    world.objects = {}
-    world.people = {}
-    world.scripts = {}
-    world.comms = {}
-    world.time = 0
-
-    build_objects()
-    build_facilities()
-    build_people()
-    build_comms()
-    build_scripts()
 

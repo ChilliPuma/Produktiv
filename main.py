@@ -15,9 +15,10 @@ from world_config import TIME_SCALE
 
 from ui_config import ui_manager
 
-#main loop------------------------------------------------------------------------------------
+from data import ui_design #DO NOT REMOVE
 
-from change import change
+#main loop------------------------------------------------------------------------------------
+from game import game
 
 running = True
 clock = pygame.time.Clock()
@@ -58,6 +59,6 @@ while running:
     pygame.display.flip()
 
     dt = clock.tick(60) / 1000  # seconds
-    change.tick(dt*TIME_SCALE)
+    game.tick(dt*TIME_SCALE)
 
 

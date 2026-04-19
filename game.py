@@ -1,6 +1,9 @@
+import copy
+import uuid
+
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind, Message, MessageKind
+    Comm, CommKind, MessageKind
 
 
 def build_storage(data, world):
@@ -34,6 +37,18 @@ class Game:
         self.script = loader.load_script()
 
 
+    def create(self, og_obj: Object):
+        created_obj = copy.deepcopy(og_obj)
+        created_obj.oid += f"_{str(uuid.uuid4())}"
+        self.world.objects[created_obj.oid] = created_obj
+        return created_obj
+
+    def tick(self, dt): #gameworld seconds
+        if self.world:
+            if self.world.time_stop:
+                return
+            self.world.time += dt
+
     def new_game(self):
         data = loader.load_default()
         self.world = self.build_world(data)
@@ -44,7 +59,7 @@ class Game:
         pass
 
     def save_game(self, filename: str):
-        loader.new_save(filename)
+        pass
 
     def build_world(self, data):
         world=World()
@@ -72,17 +87,15 @@ class Game:
                 areas={
                     area["aid"]: Area(
                         aid=area["aid"],
-                        name=area["area_name"],
+                        name=area["name"],
                         level=area["level"],
                         area=area["area"],
                         staff_max=area["staff_max"],
-                        staff=[
-                            world.people[pid] for pid in area["staff"]
-                        ]
-                        ) for area in facility["areas"]
+                        staff=[] #first pass
+                        ) for area in facility["areas"].values()
                 },
                 power=facility["power"],
-                owner=world.people[facility["owner"]],
+                owner=None, #first pass
             )
 
         for person in data["people"].values():
@@ -92,30 +105,30 @@ class Game:
                 age=person["age"],
                 sex=Sex[person["sex"]],
                 facility=world.facilities[person["facility"]],
-                area=world.facilities[person["facility"].areas[person["area"]]],
-                nation=Nation(person["nation"]),
-                faction=Faction(person["faction"]),
+                area=world.facilities[person["facility"]].areas[person["area"]],
+                nation=Nation[person["nation"]],
+                faction=Faction[person["faction"]],
                 temperament=Temperament[person["temperament"]],
                 skills={Skill[skill]: qty for skill, qty in person["skills"].items()}
             )
 
-        for facility in data["facilities"].values():
+        for facility in data["facilities"].values(): #second passes
             f=world.facilities[facility["fid"]]
-            f.staff=[
-                world.people[pid] for pid in facility["staff"]
+            f.owner=[
+                world.people[facility["owner"]]
             ]
-            for area in f:
+            for area in f.areas.values():
                 area.staff=[
-                    world.people[pid] for pid in area["staff"]
+                    world.people[pid] for pid in facility["areas"][area.aid]["staff"]
                 ]
 
-        for message in self.script["messages"]:
+        for message in self.script["messages"].values():
             script["messages"][message["mid"]] = {
                 "mid": message["mid"],
                 "kind": MessageKind[message["kind"]],
                 "text": message["text"],
-                "sender": world.people[message["sender"] if message["sender"] else None],
-                "recipient": world.people[message["recipient"] if message["recipient"] else None]
+                "sender": world.people[message["sender"]] if message["sender"] and message["sender"] != "hai" else None,
+                "recipient": world.people[message["recipient"]] if message["recipient"] else None
             }
 
         for comm in data["comms"].values():
@@ -134,4 +147,7 @@ class Game:
                 ping=comm["ping"]
             )
 
+        self.script = script
         return world
+
+game = Game()

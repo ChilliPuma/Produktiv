@@ -718,8 +718,7 @@ class UIManager:
 
     def new_game(self):
 
-        game.build_world(load_default())
-
+        game.new_game()
         self.game_load()
 
     def continue_game(self):

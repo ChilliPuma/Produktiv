@@ -1,36 +1,28 @@
 {
   "objects": {
 
-    "bike": {
-      "oid": "bike",
-      "name": "Bicycle",
-      "description": "A lightweight transport vehicle. It's ideal for smooth roads and low weight cargo.",
-      "weight": 10.0,
-      "volume": 1000.0,
-      "area": 0.2,
-      "substance": "COMPOSITE",
-      "components": [
-        {
-          "oid": "bike_handlebar",
-          "qty": 1
-        },
-        {
-          "oid": "bike_frame",
-          "qty": 1
-        },
-        {
-          "oid": "bike_seat",
-          "qty": 1
-        },
-        {
-          "oid": "bike_drivetrain",
-          "qty": 1
-        },
-        {
-          "oid": "bike_wheel",
-          "qty": 2
-        }
-      ],
+    "plank_wood": {
+      "oid": "plank_wood",
+      "name": "Wood plank",
+      "description": "A thick rectangular plank of wood. The first step in carpentry",
+      "weight": 5.0,
+      "volume": 5.0,
+      "area": 0.05,
+      "substance": "WOOD",
+      "components": [],
+      "storage": {},
+      "production": {}
+    },
+
+    "bit_nail": {
+      "oid": "bit_nail",
+      "name": "Nail",
+      "description": "A steel nail",
+      "weight": 0.005,
+      "volume": 0.0005,
+      "area": 0.00005,
+      "substance": "STEEL",
+      "components": [],
       "storage": {},
       "production": {}
     },
@@ -41,10 +33,31 @@
       "description": "An essential part for many items, strong and versatile",
       "weight": 1.0,
       "volume": 1.0,
-      "area": 0.05,
+      "area": 0.006,
       "substance": "STEEL",
       "components": [],
       "storage": {},
+      "production": {}
+    },
+
+    "table_wood": {
+      "oid": "table_wood",
+      "name": "Wood table",
+      "description": "A sturdy wooden table, has room for objects under and on it.",
+      "weight": 20.0,
+      "volume": 2400,
+      "area": 2.1,
+      "substance": "COMPOSITE",
+      "components": [
+        {
+            "oid": "plank_wood",
+            "qty": 12
+          },
+          {
+            "oid": "bit_nail",
+            "qty": 16
+          }
+      ],
       "production": {}
     }
   },
@@ -66,7 +79,16 @@
           "smith_guy"
         ],
         "staff_max": 5,
-        "inventory": []
+        "inventory": {
+          "table_wood": {
+            "qty": 1,
+            "design": {
+              "storage": {
+
+              }
+            }
+          }
+        }
         },
         "exterior": {
           "aid": "exterior",
@@ -96,12 +118,29 @@
       "faction": "INDEPENDENT",
       "temperament": "PHLEGMATIC",
       "skills": {
+        "FIT": 3.4,
+        "VIT": 4.3,
+        "SOC": 2.1,
+        "INT": 3.5
+      }
+    },
+    "hai": {
+      "pid": "hai",
+      "name": "hAI",
+      "title": "your Helper AI",
+      "age": 100,
+      "sex": "NONE",
+      "facility": "",
+      "area": "",
+      "nation": "NONE",
+      "faction": "INDEPENDENT",
+      "temperament": "AI",
+      "skills": {
         "FIT": 0.0,
         "VIT": 0.0,
         "SOC": 0.0,
         "INT": 0.0
       }
-
     }
   },
 

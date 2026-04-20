@@ -42,11 +42,14 @@ class MessageKind(Enum):
     TASK_ONLY_THEN = auto()
 
 class Nation(Enum):
+    NONE = auto()
     AMERICAN_WHITE = auto()
+
 
 class Sex(Enum):
     MALE = auto()
     FEMALE = auto()
+    NONE = auto()
 
 class Skill(Enum):
     FIT = auto()
@@ -56,11 +59,13 @@ class Skill(Enum):
 
 class Substance(Enum):
     COMPOSITE = auto()
+
     CARDBOARD = auto()
     STEEL = auto()
-    WOOD_PINE = auto()
+    WOOD = auto()
 
 class Temperament(Enum):
+    AI = auto()
     SANGUINE = auto()
     CHOLERIC = auto()
     MELANCHOLIC = auto()

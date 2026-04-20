@@ -6,30 +6,6 @@ from world_config import World, Person, Facility, Area, Object, Substance, Sex, 
     Comm, CommKind, MessageKind
 
 
-def build_storage(data, world):
-    if not data:
-        return {}
-
-    elif data["kind"] == "OBJECT":
-        return {
-            "kind": data["kind"],
-            "max": data["max"],
-            "content": [
-                world.objects[oid] for oid in data["content"]
-            ]
-        }
-    elif data["kind"] == "AMMO":
-        return {
-            "kind": data["kind"],
-            "max": data["max"],
-            "content": [
-                world.objects[oid] for oid in data["content"]
-            ]
-        }
-    else:
-        return {}
-
-
 
 class Game:
     def __init__(self):
@@ -37,7 +13,12 @@ class Game:
         self.script = loader.load_script()
 
 
-    def create(self, og_obj: Object):
+    def create(self, og_obj: Object, qty: int):
+        if qty > 1:
+            objects = []
+            for i in range(qty):
+                objects.append(self.create(og_obj,1 ))
+            return objects
         created_obj = copy.deepcopy(og_obj)
         created_obj.oid += f"_{str(uuid.uuid4())}"
         self.world.objects[created_obj.oid] = created_obj
@@ -52,8 +33,6 @@ class Game:
     def new_game(self):
         data = loader.load_default()
         self.world = self.build_world(data)
-
-        self.world.facilities["shed_backyard"].add_objects("exterior", "bicycle", 1)
 
     def load_game(self, filename: str):
         pass
@@ -90,6 +69,9 @@ class Game:
                         name=area["name"],
                         level=area["level"],
                         area=area["area"],
+                        inventory=[
+                            world.objects[oid] for oid in area["inventory"]
+                        ],
                         staff_max=area["staff_max"],
                         staff=[] #first pass
                         ) for area in facility["areas"].values()
@@ -104,11 +86,11 @@ class Game:
                 name=person["name"],
                 age=person["age"],
                 sex=Sex[person["sex"]],
-                facility=world.facilities[person["facility"]],
-                area=world.facilities[person["facility"]].areas[person["area"]],
+                facility=world.facilities[person["facility"]] if person["facility"] else None,
+                area=world.facilities[person["facility"]].areas[person["area"]] if person["facility"] else None,
                 nation=Nation[person["nation"]],
                 faction=Faction[person["faction"]],
-                temperament=Temperament[person["temperament"]],
+                temperament=Temperament[person["temperament"]] or None,
                 skills={Skill[skill]: qty for skill, qty in person["skills"].items()}
             )
 
@@ -123,7 +105,7 @@ class Game:
                 ]
 
         for message in self.script["messages"].values():
-            script["messages"][message["mid"]] = {
+            self.script["messages"][message["mid"]] = {
                 "mid": message["mid"],
                 "kind": MessageKind[message["kind"]],
                 "text": message["text"],
@@ -132,7 +114,7 @@ class Game:
             }
 
         for comm in data["comms"].values():
-            world.comms[comm["fid"]]=Comm(
+            world.comms[comm["cid"]]=Comm(
                 cid=comm["cid"],
                 kind=CommKind[comm["kind"]],
                 sender=world.people[comm["sender"]],
@@ -150,4 +132,28 @@ class Game:
         self.script = script
         return world
 
+def build_storage(data, world):
+    if not data:
+        return {}
+
+    elif data["kind"] == "OBJECT":
+        return {
+            "kind": data["kind"],
+            "max": data["max"],
+            "content": [
+                world.objects[oid] for oid in data["content"]
+            ]
+        }
+    elif data["kind"] == "AMMO":
+        return {
+            "kind": data["kind"],
+            "max": data["max"],
+            "content": [
+                world.objects[oid] for oid in data["content"]
+            ]
+        }
+    else:
+        return {}
+
 game = Game()
+

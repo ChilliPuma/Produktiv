@@ -58,6 +58,11 @@
             "qty": 16
           }
       ],
+      "storage": {
+        "kind": "OBJECT",
+        "max": 2100,
+        "content": []
+      },
       "production": {}
     }
   },
@@ -79,16 +84,7 @@
           "smith_guy"
         ],
         "staff_max": 5,
-        "inventory": {
-          "table_wood": {
-            "qty": 1,
-            "design": {
-              "storage": {
-
-              }
-            }
-          }
-        }
+        "inventory": {}
         },
         "exterior": {
           "aid": "exterior",

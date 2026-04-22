@@ -111,7 +111,11 @@ class Image:
 
     def get_image_surface(self):
 
-        surf = pygame.image.load(BASE_DIR / "pngs" / f"{self.png}.png").convert_alpha()
+        try:
+            surf = pygame.image.load(BASE_DIR / "pngs" / f"{self.png}.png").convert_alpha()
+        except FileNotFoundError:
+            surf = pygame.image.load(BASE_DIR / "pngs" / "unknown.png").convert_alpha()
+
         if self.scale:
             surf = pygame.transform.scale_by(surf, self.scale)
         if self.rotate:
@@ -536,9 +540,12 @@ class UIManager:
         self.ui_lookup("item_weight").text[1].text = unify(item.total_weight(), "weight")
         self.ui_lookup("item_volume").text[1].text = unify(item.volume, "volume")
 
+
         item_contents = []
-        for content in item.storage:
-            item_contents.append((content, content.volume))
+        if item.storage:
+            item_contents = [
+                (obj, obj.volume) for obj in item.storage["content"] if item.storage
+            ]
 
         cells = 4
 

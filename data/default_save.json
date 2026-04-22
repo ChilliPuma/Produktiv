@@ -27,13 +27,13 @@
       "production": {}
     },
 
-    "tube_steel": {
+    "rod_steel": {
       "oid": "tube_steel",
       "name": "Steel tube",
       "description": "An essential part for many items, strong and versatile",
       "weight": 1.0,
-      "volume": 1.0,
-      "area": 0.006,
+      "volume": 0.7,
+      "area": 0.003,
       "substance": "STEEL",
       "components": [],
       "storage": {},
@@ -72,7 +72,7 @@
     "shed_backyard": {
       "fid": "shed_backyard",
       "name": "Backyard shed",
-      "location": "Tiffin - Ohio, USA",
+      "location": [[0, 0],"Tiffin - Ohio, USA"],
       "owner": "smith_guy",
       "areas": {
         "interior": {
@@ -156,10 +156,31 @@
   },
 
   "flags": {
-    
+    "new game": true
   },
 
   "states": {
-    "player": "smith_guy"
+    "player": "smith_guy",
+    "time": 0.0
+  },
+
+  "stories": {
+    "hai_intro" : {
+      "state": "untriggered",
+      "trigger": {
+        "flags": {
+          "new game": true
+        },
+        "state": {
+          "time": 600
+        }
+      },
+      "on_trigger": {
+        "message": {
+          "comm": "hai",
+          "mid": "GREETING_s:hai_1"
+        }
+      }
+    }
   }
 }

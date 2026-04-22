@@ -8,7 +8,7 @@ from enum import Enum, auto
 
 # Enums‐-----------------------------------------
 
-class CanContain(Enum):
+class StorageKind(Enum):
     NONE = auto()
 
     AMMO_9MM = auto()
@@ -156,9 +156,24 @@ class Object:
 
     def total_weight(self):
         total = self.weight
-        for content in self.storage:
-            total += content.total_weight()
+        if self.storage and self.storage["kind"] == "OBJECT":
+            for content in self.storage["content"]:
+                total += content.total_weight()
         return total
+
+    def used_storage(self) -> float:
+        total = 0
+        if self.storage["kind"] == "OBJECT":
+            for obj in self.storage["content"]:
+                total += obj.volume
+        return total
+
+    def can_store(self, obj: "Object"):
+        if self.storage:
+            if self.storage["kind"] == "OBJECT":
+                if obj.volume + self.used_storage() <= self.storage["max"]:
+                    return True
+        return False
 
 #Area----------------------------------------------------------
 
@@ -180,6 +195,19 @@ class Area:
         self.staff = staff or []
         self.staff_max = staff_max
         self.inventory = inventory or []
+
+    def used_area(self) -> float:
+        used_area = 0.0
+        for obj in self.inventory:
+            used_area += obj.area
+
+        return used_area
+
+    def can_add(self, obj_area: float) -> bool:
+        if obj_area + self.used_area() > self.area:
+            return False
+        else:
+            return True
 
 #Facilities-------------------------------------------------------
 

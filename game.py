@@ -11,15 +11,32 @@ class Game:
     def __init__(self):
         self.world = None
         self.script = loader.load_script()
+        self.plot = {}
+
+    def object_in_object(self, obj: Object, content: Object):
+        if obj.can_store(content):
+            obj.storage["content"].append(content)
+            return True
+        else:
+            print(f"FAILED: {content.oid} too large for {obj.oid}")
+            return False
+
+    def object_in_area(self, area: Area, obj: Object):
+        if area.can_add(obj.area):
+            area.inventory.append(obj)
+            return True
+        else:
+            print(f"FAILED: {obj.oid} too large for {area.aid}")
+            return False
 
 
-    def create(self, og_obj: Object, qty: int):
+    def create(self, og_oid: str, qty: int):
         if qty > 1:
             objects = []
             for i in range(qty):
-                objects.append(self.create(og_obj,1 ))
+                objects.append(self.create(og_oid,1 ))
             return objects
-        created_obj = copy.deepcopy(og_obj)
+        created_obj = copy.deepcopy(self.world.objects[og_oid])
         created_obj.oid += f"_{str(uuid.uuid4())}"
         self.world.objects[created_obj.oid] = created_obj
         return created_obj
@@ -34,6 +51,16 @@ class Game:
         data = loader.load_default()
         self.world = self.build_world(data)
 
+        #new game design:
+
+        shed = self.world.facilities["shed_backyard"]
+        shed_int, shed_ext = shed.areas["interior"], shed.areas["exterior"]
+        main_table = self.create("table_wood", 1)
+        for i in range (4):
+            self.object_in_object(main_table, self.create("plank_wood", 1))
+        self.object_in_area(shed_int, main_table)
+
+
     def load_game(self, filename: str):
         pass
 
@@ -44,10 +71,18 @@ class Game:
         world=World()
         script={}
 
+        world.time = data["states"]["time"]
+        plot = {
+            "flags": data["flags"],
+            "states": data["states"],
+            "stories": data["stories"]
+        }
+
         for obj in data["objects"].values():
             world.objects[obj["oid"]] = Object(
                 oid=obj["oid"],
                 name=obj["name"],
+                description=obj["description"],
                 weight=obj["weight"],
                 volume=obj["volume"],
                 area=obj["area"],
@@ -62,7 +97,7 @@ class Game:
             world.facilities[facility["fid"]] = Facility(
                 fid=facility["fid"],
                 name=facility["name"],
-                location=facility["location"],
+                location=(facility["location"][0], facility["location"][1]),
                 areas={
                     area["aid"]: Area(
                         aid=area["aid"],
@@ -130,6 +165,7 @@ class Game:
             )
 
         self.script = script
+        self.plot = plot
         return world
 
 def build_storage(data, world):

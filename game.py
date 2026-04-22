@@ -96,9 +96,9 @@ class Game:
 
         for facility in data["facilities"].values(): #second passes
             f=world.facilities[facility["fid"]]
-            f.owner=[
-                world.people[facility["owner"]]
-            ]
+            f.owner=world.people[facility["owner"]]
+            if f.owner == world.people[data["states"]["player"]]:
+                world.owned_facilities.append(f)
             for area in f.areas.values():
                 area.staff=[
                     world.people[pid] for pid in facility["areas"][area.aid]["staff"]

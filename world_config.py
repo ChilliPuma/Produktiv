@@ -115,7 +115,7 @@ class World:
                  comms: dict[str, "Comm"] = None,
                  time: float = 0):
         self.facilities = facilities if facilities else {}
-        self.owned_facilities = {}
+        self.owned_facilities = []
         self.objects = objects if objects else {}
         self.people = people if people else {}
         self.player = player

@@ -54,6 +54,15 @@ def unify(qty: float, unit: str) -> str:
         else:
             unit = "m²"
 
+    elif unit == "power":
+        if qty > 2000:
+            qty /= 1000
+            unit = "kW"
+            return f"{qty:.1f}{unit}"
+        else:
+            return f"{qty:.0f}W"
+
+
     return f"{qty:.1f}{unit}"
 
 class Text:
@@ -462,7 +471,7 @@ class UIManager:
         f_location.text[0].text = f.location[1]
 
         f_staff = self.ui_lookup("facilities_staff")
-        f_staff.text[0].text = f"/{f.staff_capacity} staff"
+        f_staff.text[0].text = f"/{f.staff_max()} staff"
         f_staff.text[1].text = f"{f.total_staff()}"
 
         f_area = self.ui_lookup("facilities_area")
@@ -470,7 +479,7 @@ class UIManager:
         f_area.text[1].text = unify(f.used_area(), "area")
 
         f_power = self.ui_lookup("facilities_power")
-        f_power.text[0].text = f"/{f.power}kW"
+        f_power.text[0].text = f"/{unify(f.power, "power")}"
         f_power.text[1].text = f"x"
 
         cells = 4

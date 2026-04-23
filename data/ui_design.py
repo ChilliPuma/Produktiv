@@ -933,7 +933,7 @@ ui_convo_detail = UI(
             font = FONTS["topaz_l"],
             color = COLORS["white"],
             v_align = "top",
-            pad_y = frame_border + s(10),
+            pad_y = frame_border + s(11),
         ),
         Text(
             text = "=",

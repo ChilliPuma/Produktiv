@@ -156,7 +156,7 @@
   },
 
   "flags": {
-    "new game": true
+    "new_game": true
   },
 
   "states": {
@@ -169,15 +169,15 @@
       "state": "untriggered",
       "trigger": {
         "flags": {
-          "new game": true
+          "new_game": true
         },
-        "state": {
-          "time": 600
+        "states": {
+          "time": 300
         }
       },
       "on_trigger": {
         "message": {
-          "comm": "hai",
+          "cid": "hai",
           "mid": "GREETING_s:hai_1"
         }
       }

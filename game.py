@@ -13,6 +13,32 @@ class Game:
         self.script = loader.load_script()
         self.plot = {}
 
+    def plot_check(self):
+        print(f"plot time: {self.plot['states']['time']}, world time: {self.world.time}")
+        for story in self.plot["stories"].values():
+            if story["state"] == "untriggered":
+                print(story)
+                if all (
+                    self.plot[check][key] >= value if (check, key) in GTE_check
+                    else self.plot[check][key] == value
+                    for check in story["trigger"].keys()
+                    for key, value in story["trigger"][check].items()
+                ):
+                    print(f"Story triggered: {story}")
+                    try:
+                        story["state"] = "triggered"
+                        for effect, content in story["on_trigger"].items():
+                            if effect == "message":
+                                comm = self.world.comms[content["cid"]]
+                                comm.receive((
+                                    self.script["messages"][content["mid"]]["text"],
+                                    True,
+                                    self.world.time
+                                ))
+                    except Exception as e:
+                        print(f"Trigger error: {e}")
+
+
     def object_in_object(self, obj: Object, content: Object):
         if obj.can_store(content):
             obj.storage["content"].append(content)
@@ -46,6 +72,10 @@ class Game:
             if self.world.time_stop:
                 return
             self.world.time += dt
+            self.plot["states"]["time"] = self.world.time
+
+            self.plot_check()
+            print(len(self.world.comms["hai"].history))
 
     def new_game(self):
         data = loader.load_default()
@@ -69,7 +99,6 @@ class Game:
 
     def build_world(self, data):
         world=World()
-        script={}
 
         world.time = data["states"]["time"]
         plot = {
@@ -119,6 +148,7 @@ class Game:
             world.people[person["pid"]]=Person(
                 pid=person["pid"],
                 name=person["name"],
+                title=person["title"],
                 age=person["age"],
                 sex=Sex[person["sex"]],
                 facility=world.facilities[person["facility"]] if person["facility"] else None,
@@ -139,14 +169,16 @@ class Game:
                     world.people[pid] for pid in facility["areas"][area.aid]["staff"]
                 ]
 
+        new_messages = {}
         for message in self.script["messages"].values():
-            self.script["messages"][message["mid"]] = {
+            new_messages[message["mid"]] = {
                 "mid": message["mid"],
                 "kind": MessageKind[message["kind"]],
                 "text": message["text"],
-                "sender": world.people[message["sender"]] if message["sender"] and message["sender"] != "hai" else None,
+                "sender": world.people[message["sender"]] if message["sender"] else None,
                 "recipient": world.people[message["recipient"]] if message["recipient"] else None
             }
+        self.script["messages"] = new_messages
 
         for comm in data["comms"].values():
             world.comms[comm["cid"]]=Comm(
@@ -164,7 +196,6 @@ class Game:
                 ping=comm["ping"]
             )
 
-        self.script = script
         self.plot = plot
         return world
 
@@ -193,3 +224,6 @@ def build_storage(data, world):
 
 game = Game()
 
+GTE_check = [
+    ("states", "time")
+]

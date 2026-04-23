@@ -1,7 +1,7 @@
 import json
 import logging
 
-from loader import saves_dir, load_default
+from loader import saves_dir
 
 log = logging.getLogger(__name__)
 
@@ -270,6 +270,25 @@ class UIManager:
     viewed_comm = ""
     conv_scroll = 0
     conv_txt_scroll = 0
+
+    def tick(self, dt):
+        if game.world:
+            if not game.world.time_stop:
+                time_bar=self.ui_lookup("time_bar")
+                time_bar.text[0].text, time_bar.old=format_time(game.world.time), True
+
+                if self.menu_history[-1].startswith("comms"):
+                    for comm in game.world.comms.values():
+                        if comm.new_message:
+                            comm.new_message = False
+                            self.comms_display()
+                            break
+                elif self.menu_history[-1].startswith("convo"):
+                    for comm in game.world.comms.values():
+                        if comm.new_message:
+                            comm.new_message = False
+                            self.convo_display()
+                            break
 
     def draw(self, surface):
 
@@ -591,7 +610,7 @@ class UIManager:
             self.cmms_scroll = 0
 
         contacts = [
-            (comm, comm.history[-1].timestamp if comm.history else None) for comm in game.world.comms.values()
+            (comm, comm.history[-1][2] if comm.history else None) for comm in game.world.comms.values()
         ]
         contacts.sort(key = lambda c: (c[0] != game.world.comms["hai"], -(c[1] or 0)))
 
@@ -613,31 +632,31 @@ class UIManager:
             else:
                 comm = contacts[i + gcs * self.cmms_scroll][0]
 
-                last_text = comm.history[-1].text if comm.history else ""
+                last_text = comm.history[-1][0] if comm.history else ""
                 if len(last_text) > 91:
                     last_text = last_text[:91] + "..."
 
                 if comm.cid == "hai":
                     gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
-                        "hAI",
-                        "Your helper AI",
+                        comm.recipient.name,
+                        comm.recipient.title,
                         last_text,
                         comm.cid,
-                        f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
+                        f"{format_time(comm.history[-1][2])}" if comm.history else "",
                     )
                     gc.fill, gc.function = COLORS["gray_mid"], lambda: self.menu_switch("convo")
-                    gc_image.image[0].png, gc_image.fill = "hai", COLORS["gray_lo"]
+                    gc_image.image[0].png, gc_image.fill = comm.recipient.pid, COLORS["gray_lo"]
 
                 else:
                     gc.text[0].text, gc.text[1].text, gc.text[2].text, gc.text[3].text, gc.text[4].text = (
-                        game.world.people[comm.recipient].name,
-                        game.world.people[comm.recipient].title,
+                        comm.recipient.name,
+                        comm.recipient.title,
                         last_text,
                         comm.cid,
-                        f"{format_time(comm.history[-1].timestamp)}" if comm.history else "",
+                        f"{format_time(comm.history[-1][2])}" if comm.history else "",
                     )
                     gc.fill = COLORS["cyan_lo"]
-                    gc_image.image[0].png, gc_image.fill = game.world.people[comm.recipient].pid, COLORS["cyan_dead"]
+                    gc_image.image[0].png, gc_image.fill = comm.recipient.pid, COLORS["cyan_dead"]
 
         self.menu_refresh()
 
@@ -651,8 +670,7 @@ class UIManager:
 
         comm = game.world.comms[self.viewed_comm]
 
-        self.ui_lookup("convo_header").text[0].text = game.world.people[comm.recipient].name if (
-                self.viewed_comm != "hai") else "hAI"
+        self.ui_lookup("convo_header").text[0].text = comm.recipient.name
         gcs = 4
         start = -gcs * (self.conv_scroll + 1)
         end = -gcs * self.conv_scroll if self.conv_scroll != 0 else None
@@ -674,18 +692,30 @@ class UIManager:
 
             else:
                 text = texts[-1 - filled]
-                if text[2] == "right":
+                side = text[1] if len(text) > 1 else None
+                timestamp = text[2] if len(text) > 2 else None
+
+                if side == "right":
                     gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
                     gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
-                    gc_r.text[0].text, gc_r.text[1].text = text[0], text[1]
+                    gc_r.text[0].text = text[0]
+                    gc_r.text[1].text = format_time(timestamp) if timestamp is not None else ""
                     gc_r.fill = COLORS["orange_lo"]
-                    gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender, COLORS["transparent"]
+                    gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender.pid, COLORS["transparent"]
                     filled += 1
                     continue
-                elif text[2] == "left":
-                    gc_l.text[0].text, gc_l.text[1].text = text[0], (text[1] if text[1] else "")
+                elif side == "left":
+                    gc_l.text[0].text = text[0]
+                    gc_l.text[1].text = format_time(timestamp) if timestamp is not None else ""
                     gc_l.fill = COLORS["cyan_lo"]
-                    gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient, COLORS["transparent"]
+                    gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient.pid, COLORS["transparent"]
+                    gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
+                    gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
+                    filled += 1
+                    continue
+                else:
+                    gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
+                    gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
                     gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
                     gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
                     filled += 1
@@ -726,6 +756,7 @@ class UIManager:
 
         self.game_loaded = True
         game.world.time_stop = False
+        self.ui_lookup("time_bar").text[0].text = format_time(game.world.time)
 
         self.menu_switch("main")
 

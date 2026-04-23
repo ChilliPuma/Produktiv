@@ -60,5 +60,6 @@ while running:
 
     dt = clock.tick(60) / 1000  # seconds
     game.tick(dt*TIME_SCALE)
+    ui_manager.tick(dt*TIME_SCALE)
 
 

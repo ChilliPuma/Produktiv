@@ -6,6 +6,14 @@
       "text": "Greetings, how may I assist you today?",
       "sender": "hai",
       "recipient": ""
+    },
+
+    "TASK_NEW_r:hai_1": {
+      "mid": "TASK_NEW_r:hai_1",
+      "kind": "TASK_NEW",
+      "text": "Set up a new task for me.",
+      "sender": "",
+      "recipient": "hai"
     }
   }
 }

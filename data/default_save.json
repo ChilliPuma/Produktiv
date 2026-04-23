@@ -178,7 +178,7 @@
       "on_trigger": {
         "message": {
           "cid": "hai",
-          "mid": "GREETING_s:hai_1"
+          "kind": "GREETING"
         }
       }
     }

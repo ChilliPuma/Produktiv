@@ -615,9 +615,7 @@ class UIManager:
         contacts.sort(key = lambda c: (c[0] != game.world.comms["hai"], -(c[1] or 0)))
 
         gcs = 3
-
         self.check_scroll("comms", "cyan", len(contacts), gcs, self.cmms_scroll)
-
         for i in range (gcs):
             gc = self.ui_lookup(f"comms_grid_cell_{i + 1}")
             gc_image = self.ui_lookup(f"comms_grid_cell_image_{i + 1}")
@@ -632,7 +630,7 @@ class UIManager:
             else:
                 comm = contacts[i + gcs * self.cmms_scroll][0]
 
-                last_text = comm.history[-1][0] if comm.history else ""
+                last_text = comm.history[-1][0]["text"] if comm.history else ""
                 if len(last_text) > 91:
                     last_text = last_text[:91] + "..."
 

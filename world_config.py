@@ -295,7 +295,7 @@ class Comm:
         self.sender=sender
         self.recipient=recipient
 
-        self.history: list[tuple[str, bool, float]]=history if history is not None else [] #text, received, timestamp
+        self.history: list[tuple[dict, bool, float]]=history if history is not None else [] #message: dict, received, timestamp
         self.transcript: list=[] #text, "left" or "right", "timestamp"
 
         self.ping=ping
@@ -303,18 +303,12 @@ class Comm:
 
         self.char=81
 
-    def transcribe(self, add: tuple[str, bool, float]):
-        lines = text_lines(add[0], self.char)
-        if add[1]:
+    def transcribe(self, message: dict, received: bool, timestamp: float):
+        lines=text_lines(message["text"], self.char)
+        if received:
             for line in lines:
-                self.transcript.append((line, "left", add[2]))
+                self.transcript.append((line, "left", timestamp))
         else:
             for line in lines:
-                self.transcript.append((line, "right", add[2]))
-
-    def receive(self, message: tuple[str, bool, float]):
-        self.history.append(message)
-        self.transcribe(message)
-        print(f"{message} received")
-        self.new_message=True
+                self.transcript.append((line, "right", timestamp))
 

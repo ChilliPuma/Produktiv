@@ -1,4 +1,5 @@
 import copy
+import random
 import uuid
 
 import loader
@@ -13,8 +14,35 @@ class Game:
         self.script = loader.load_script()
         self.plot = {}
 
+    def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
+        candidates = []
+        for message in self.script["messages"].values():
+            points = 0
+            if message["kind"] != kind:
+                continue
+            else:
+                if message["sender"] and message["sender"] != comm.recipient:
+                    continue
+                elif message["sender"] == comm.recipient:
+                    points += 1
+
+                if message["recipient"] and message["recipient"] != comm.sender:
+                    continue
+                elif message["recipient"] == comm.sender:
+                    points += 1
+
+            candidates.append((message, points))
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        candidates = candidates[:7]
+        chosen = random.choice(candidates)[0]
+
+        comm.history.append((chosen, True, timestamp))
+        comm.transcribe(chosen, True, timestamp)
+
+        print(f"{chosen} received")
+        comm.new_message = True
+
     def plot_check(self):
-        print(f"plot time: {self.plot['states']['time']}, world time: {self.world.time}")
         for story in self.plot["stories"].values():
             if story["state"] == "untriggered":
                 print(story)
@@ -30,11 +58,12 @@ class Game:
                         for effect, content in story["on_trigger"].items():
                             if effect == "message":
                                 comm = self.world.comms[content["cid"]]
-                                comm.receive((
-                                    self.script["messages"][content["mid"]]["text"],
-                                    True,
+                                kind = MessageKind[content["kind"]]
+                                self.comm_receive(
+                                    comm,
+                                    kind,
                                     self.world.time
-                                ))
+                                )
                     except Exception as e:
                         print(f"Trigger error: {e}")
 

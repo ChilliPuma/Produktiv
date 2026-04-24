@@ -284,7 +284,7 @@ class UIManager:
                 facility_inventory.append((obj, area_name))
 
         self.ui_lookup("facilities_header").text[0].text = facility.name
-        self.ui_lookup("facilities_image").image[0].png = "facility_" + facility.fid
+        self.ui_lookup("facilities_image").image[0].png = facility.fid
         self.ui_lookup("facilities_location").text[0].text = facility.location[1]
         self.ui_lookup("facilities_staff").text[0].text = f"/{facility.staff_max()} staff"
         self.ui_lookup("facilities_staff").text[1].text = f"{facility.total_staff()}"
@@ -529,6 +529,18 @@ class UIManager:
             filled += 1
 
         self.check_scroll("convo", "cyan", len(comm.transcript), gcs, self.conv_scroll)
+
+        txt_gcs = 2
+        txt_start = -txt_gcs * (self.conv_txt_scroll + 1)
+        txt_end = -txt_gcs * self.conv_txt_scroll if self.conv_txt_scroll != 0 else None
+        txt_texts = comm.responses[start:end]
+        filled = 0
+
+        self.check_scroll(
+            "convo_text", "blue", len(comm.responses),
+            txt_gcs, self.conv_txt_scroll
+        )
+
         self.menu_refresh()
 
     def convo_scroll(self, scroll):

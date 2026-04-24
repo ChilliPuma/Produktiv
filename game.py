@@ -1,22 +1,76 @@
 import copy
 import random
 import uuid
+from functools import partial
 
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind, MessageKind
-
+    Comm, CommKind, MessageKind, format_time_short
 
 
 class Game:
     def __init__(self):
-        self.world = None
-        self.script = loader.load_script()
-        self.plot = {}
+        self.world=None
+        self.script=loader.load_script()
+        self.plot={}
         print("[game] script loaded")
 
+    def comm_react(self, comm: Comm, kind: MessageKind):
+        kind_chosen="ERROR"
+
+        if comm.kind==CommKind.HAI:
+            if kind.name=="TASK_ADD":
+                kind_chosen="TASK_REQUEST"
+
+
+        kind_chosen=MessageKind(kind_chosen)
+        self.comm_receive(comm, kind_chosen, self.world.time)
+
+    def comm_send(self, comm:Comm, message:dict):
+        timestamp = self.world.time
+
+        comm.history.append((message, False, timestamp))
+        comm.transcribe(message, True, timestamp)
+
+        print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
+
+        self.world.processes.append((
+            partial(self.comm_react, comm, message["kind"]),
+            comm.ping
+        ))
+
+    def comm_responses(self, comm:Comm) -> list[dict]:
+        kinds = []
+
+        if comm.kind==CommKind.HAI:
+            if comm.history:
+                if comm.history[-1][1]: #if last was received
+                    last=comm.history[-1][0]
+                    if last["kind"].name=="GREETING":
+                        kinds.extend([
+                            "GREETING",
+                            "TASK_ADD"
+                        ])
+
+        kinds = list(set(kinds))
+        candidates=[]
+        for kind in kinds:
+            chosen = self.best_message(comm, MessageKind(kind))
+            candidates.extend(chosen)
+        print(f"[game] {comm.cid} responses updated")
+        comm.responses=candidates
+
     def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
-        candidates = []
+
+        chosen = self.best_message(comm, kind)
+
+        comm.history.append((chosen, True, timestamp))
+        comm.transcribe(chosen, True, timestamp)
+        comm.new_message = True
+        print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")
+
+    def best_message(self, comm:Comm, kind: MessageKind) -> dict:
+        candidates=[]
         for message in self.script["messages"].values():
             points = 0
             if message["kind"] != kind:
@@ -34,13 +88,25 @@ class Game:
 
             candidates.append((message, points))
         candidates.sort(key=lambda x: x[1], reverse=True)
-        candidates = candidates[:7]
-        chosen = random.choice(candidates)[0]
+        candidates=candidates[:3]
+        chosen=random.choice(
+            candidates
+        )[0] if candidates else {
+            "text": kind.name
+        }
+        return chosen
 
-        comm.history.append((chosen, True, timestamp))
-        comm.transcribe(chosen, True, timestamp)
-        print(f"[game] message received in {comm.cid}: {chosen['mid']} at {timestamp:.2f}")
-        comm.new_message = True
+    def process_check(self, dt: float):
+        processes=[]
+        for process in self.world.processes:
+            function, time=process
+            time-=dt
+            if time<=0:
+                function()
+                continue
+            processes.append((function, time))
+
+        self.world.processes=processes
 
     def plot_check(self):
         for story_id, story in self.plot["stories"].items():
@@ -103,6 +169,7 @@ class Game:
             self.plot["states"]["time"] = self.world.time
 
             self.plot_check()
+            self.process_check(dt)
 
     def new_game(self):
         data = loader.load_default()

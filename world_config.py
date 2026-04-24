@@ -25,17 +25,27 @@ class Faction(Enum):
     MORMON = auto()
 
 class MessageKind(Enum):
+    ERROR = auto()
+
     GREETING = auto()
     ACKNOWLEDGEMENT = auto()
-
-    REQUEST_TASK = auto()
 
     STATUS = auto()
     PROBLEM = auto()
 
-    TASK_NEW = auto()
-    TASK_THEN = auto()
-    TASK_ONLY_THEN = auto()
+    TASK_ADD = auto()
+    TASK_REPEAT = auto()
+
+    TASK_REQUEST = auto()
+
+    TASK_RECON = auto()
+    TASK_PRODUCE = auto()
+
+    TASK_TIME_ASAP = auto()
+    TASK_TIME_0600 = auto()
+    TASK_TIME_1200 = auto()
+    TASK_TIME_1800 = auto()
+    TASK_TIME_0000 = auto()
 
 class Nation(Enum):
     NONE = auto()
@@ -283,6 +293,7 @@ class Comm:
         sender: str, #pid
         recipient: str, #pid
         history: list[tuple[dict, bool, float]] = None, #message dict, received, timestamp
+        responses: list[dict] = None,
         ping: float=2.0
         ):
 
@@ -292,7 +303,8 @@ class Comm:
         self.recipient=recipient
 
         self.history: list[tuple[dict, bool, float]] = history if history is not None else []
-        self.transcript: list=[] #text, "left" or "right", "timestamp"
+        self.transcript: list=[] #text, "left" or "right", "timestamp" FIX TYPE HINT AND ADD INIT
+        self.responses: list[dict] = responses if responses is not None else []
 
         self.ping=ping
         self.new_message=False

@@ -1,7 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-
 import pygame
 pygame.init()
 
@@ -10,15 +6,17 @@ import json
 
 from world_config import Object, Facility, Area, Person
 
-from visual_config import BASE_DIR
+from data.visual_design import BASE_DIR
 
 saves_dir = BASE_DIR / "saves"
 
 def load_default():
+    print("[loader] loading default save data")
     with open(BASE_DIR / "data/default_save.json") as f:
         return json.load(f)
 
 def load_script():
+    print("[loader] loading script data")
     with open(BASE_DIR / "data/script.json") as f:
         return json.load(f)
 
@@ -30,6 +28,7 @@ def new_save(save_file_name: str, save_data: dict):
     path = saves_dir / f"{save_file_name}.json"
     with path.open("w", encoding="utf-8") as f:
         json.dump(save_data, f, indent=4)
+    print(f"[loader] saved game to {path.name}")
 
 def serialize_object(obj: Object) -> dict:
     return {
@@ -79,4 +78,3 @@ def serialize_person(p: Person) -> dict:
         },
         "temperament": p.temperament.name,
     }
-

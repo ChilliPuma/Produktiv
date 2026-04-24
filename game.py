@@ -13,6 +13,7 @@ class Game:
         self.world = None
         self.script = loader.load_script()
         self.plot = {}
+        print("[game] script loaded")
 
     def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
         candidates = []
@@ -38,21 +39,19 @@ class Game:
 
         comm.history.append((chosen, True, timestamp))
         comm.transcribe(chosen, True, timestamp)
-
-        print(f"{chosen} received")
+        print(f"[game] message received in {comm.cid}: {chosen['mid']} at {timestamp:.2f}")
         comm.new_message = True
 
     def plot_check(self):
-        for story in self.plot["stories"].values():
+        for story_id, story in self.plot["stories"].items():
             if story["state"] == "untriggered":
-                print(story)
                 if all (
                     self.plot[check][key] >= value if (check, key) in GTE_check
                     else self.plot[check][key] == value
                     for check in story["trigger"].keys()
                     for key, value in story["trigger"][check].items()
                 ):
-                    print(f"Story triggered: {story}")
+                    print(f"[game] story triggered: {story_id}")
                     try:
                         story["state"] = "triggered"
                         for effect, content in story["on_trigger"].items():
@@ -104,11 +103,11 @@ class Game:
             self.plot["states"]["time"] = self.world.time
 
             self.plot_check()
-            print(len(self.world.comms["hai"].history))
 
     def new_game(self):
         data = loader.load_default()
         self.world = self.build_world(data)
+        print("[game] new world created")
 
         #new game design:
 
@@ -118,6 +117,7 @@ class Game:
         for i in range (4):
             self.object_in_object(main_table, self.create("plank_wood", 1))
         self.object_in_area(shed_int, main_table)
+        print("[game] new game setup complete")
 
 
     def load_game(self, filename: str):
@@ -128,6 +128,7 @@ class Game:
 
     def build_world(self, data):
         world=World()
+        print("[game] building world objects")
 
         world.time = data["states"]["time"]
         plot = {
@@ -217,7 +218,7 @@ class Game:
                 recipient=world.people[comm["recipient"]],
                 history=[
                     (
-                        message["mid"],
+                        self.script["messages"][message["mid"]],
                         message["received"],
                         message["timestamp"]
                     ) for message in comm["history"]
@@ -226,6 +227,10 @@ class Game:
             )
 
         self.plot = plot
+        print(
+            f"[game] world ready: {len(world.facilities)} facilities, "
+            f"{len(world.people)} people, {len(world.objects)} objects, {len(world.comms)} comms"
+        )
         return world
 
 def build_storage(data, world):

@@ -1,16 +1,13 @@
 import json
-import logging
 from collections import deque
 
 import pygame
 
 from game import game
 from loader import saves_dir
-from ui_components import UI, Text, unify
-from visual_config import COLORS, FONTS
+from data.ui_components import UI, Text, unify
+from data.visual_design import COLORS, FONTS
 from world_config import format_time
-
-log = logging.getLogger(__name__)
 
 
 class UIManager:
@@ -95,7 +92,6 @@ class UIManager:
             surface.blit(ui.surf, ui.pos)
 
     def click(self, pos):
-        log.debug("Click at %s", pos)
         for ui in sorted(UI.elements, key=lambda e: e.layer, reverse=True):
             if not ui.visible:
                 continue
@@ -117,7 +113,7 @@ class UIManager:
                         pygame.key.stop_text_input()
 
                     ui.function()
-                    log.debug("Clicked UI: %s", ui.name)
+                    print(f"[ui] clicked {ui.name}")
                     break
 
     def menu_refresh(self):
@@ -214,8 +210,7 @@ class UIManager:
             self.convo_display()
 
         self.menu_history.append(menu_name)
-        log.info("Switching menu to: %s", menu_name)
-        log.debug("Menu history: %s", self.menu_history)
+        print(f"[ui] menu -> {menu_name}")
 
         for ui in UI.elements:
             if ui.layer == 33:
@@ -241,6 +236,7 @@ class UIManager:
 
         self.menu_history.pop()
         previous_menu = self.menu_history.pop()
+        print(f"[ui] back -> {previous_menu}")
         self.menu_switch(previous_menu)
 
     def follow_pointer(self, ui_name: str):
@@ -249,11 +245,14 @@ class UIManager:
             return
 
         if hasattr(ui.pointer, "oid"):
+            print(f"[ui] pointer item -> {ui.pointer.oid}")
             self.view_item(ui.pointer)
         elif hasattr(ui.pointer, "cid"):
+            print(f"[ui] pointer comm -> {ui.pointer.cid}")
             self.view_comm(ui.pointer)
 
     def new_save_button(self, save_file_name: str):
+        print(f"[ui] new save requested: {save_file_name or '[auto]'}")
         self.menu_switch("saves")
 
     def game_load(self):
@@ -264,15 +263,18 @@ class UIManager:
         self.game_loaded = True
         game.world.time_stop = False
         self.ui_lookup("time_bar").text[0].text = format_time(game.world.time)
+        print(f"[ui] game loaded at {format_time(game.world.time)}")
         self.menu_switch("main")
         self.ui_update("time_bar", visible=True)
 
     def new_game(self):
+        print("[ui] new game")
         game.new_game()
         self.game_load()
 
     def continue_game(self):
         if self.game_loaded:
+            print("[ui] continue game")
             self.game_load()
 
     def facilities_display(self, facility):
@@ -333,12 +335,14 @@ class UIManager:
             return
 
         self.facility_inv_scroll += scroll
+        print(f"[ui] facilities scroll -> {self.facility_inv_scroll}")
         self.facilities_display(game.world.owned_facilities[self.viewed_facility])
         self.menu_refresh()
 
     def view_item(self, item):
         self.item_cont_scroll = 0
         self.viewed_item_history.append(item)
+        print(f"[ui] view item -> {item.oid}")
         if not self.menu_history or self.menu_history[-1] != "item":
             self.menu_switch("item")
         else:
@@ -400,12 +404,14 @@ class UIManager:
             return
 
         self.item_cont_scroll += scroll
+        print(f"[ui] item contents scroll -> {self.item_cont_scroll}")
         self.item_display()
 
     def view_comm(self, comm):
         self.viewed_comm = comm.cid
         self.conv_scroll = 0
         self.conv_txt_scroll = 0
+        print(f"[ui] view comm -> {comm.cid}")
         if not self.menu_history or self.menu_history[-1] != "convo":
             self.menu_switch("convo")
         else:
@@ -440,7 +446,7 @@ class UIManager:
                 continue
 
             comm = contacts[i + gcs * self.cmms_scroll][0]
-            last_text = comm.history[-1][0] if comm.history else ""
+            last_text = comm.history[-1][0]["text"] if comm.history else ""
             if len(last_text) > 91:
                 last_text = last_text[:91] + "..."
 
@@ -466,6 +472,7 @@ class UIManager:
             return
 
         self.cmms_scroll += scroll
+        print(f"[ui] comms scroll -> {self.cmms_scroll}")
         self.comms_display()
 
     def convo_display(self):
@@ -534,6 +541,7 @@ class UIManager:
             return
 
         self.conv_scroll += scroll
+        print(f"[ui] convo scroll -> {self.conv_scroll}")
         self.convo_display()
 
 

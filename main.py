@@ -2,23 +2,20 @@ import pygame
 
 pygame.init()
 
-import logging
-from logging_config import setup_logging
-setup_logging()
-log = logging.getLogger("main")
-
-from visual_config import init_display
+from data.visual_design import init_display
 init_display()
-from visual_config import OFFSET_X, OFFSET_Y, SQUARE_SIZE, game_surface, screen
+from data.visual_design import OFFSET_X, OFFSET_Y, SQUARE_SIZE, game_surface, screen
 
 from world_config import TIME_SCALE
 
-from ui_config import ui_manager
+from ui_manager import ui_manager
 
 from data import ui_design #DO NOT REMOVE
 
 #main loop------------------------------------------------------------------------------------
 from game import game
+
+print("[main] starting Produktiv")
 
 running = True
 clock = pygame.time.Clock()
@@ -61,5 +58,3 @@ while running:
     dt = clock.tick(60) / 1000  # seconds
     game.tick(dt*TIME_SCALE)
     ui_manager.tick(dt*TIME_SCALE)
-
-

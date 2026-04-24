@@ -1,7 +1,3 @@
-import logging
-
-log = logging.getLogger(__name__)
-
 from enum import Enum, auto
 
 
@@ -286,7 +282,7 @@ class Comm:
         kind: CommKind,
         sender: str, #pid
         recipient: str, #pid
-        history: list[tuple[str, bool, float]] = None, #text, received, timestamp
+        history: list[tuple[dict, bool, float]] = None, #message dict, received, timestamp
         ping: float=2.0
         ):
 
@@ -295,13 +291,16 @@ class Comm:
         self.sender=sender
         self.recipient=recipient
 
-        self.history: list[tuple[dict, bool, float]]=history if history is not None else [] #message: dict, received, timestamp
+        self.history: list[tuple[dict, bool, float]] = history if history is not None else []
         self.transcript: list=[] #text, "left" or "right", "timestamp"
 
         self.ping=ping
         self.new_message=False
 
         self.char=81
+
+        for message, received, timestamp in self.history:
+            self.transcribe(message, received, timestamp)
 
     def transcribe(self, message: dict, received: bool, timestamp: float):
         lines=text_lines(message["text"], self.char)
@@ -311,4 +310,3 @@ class Comm:
         else:
             for line in lines:
                 self.transcript.append((line, "right", timestamp))
-

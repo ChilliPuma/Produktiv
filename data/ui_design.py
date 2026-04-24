@@ -1,8 +1,6 @@
-import logging
-log = logging.getLogger(__name__)
-
-from ui_config import UI, Text, Image, ui_manager
-from visual_config import COLORS, FONTS, SQUARE_SIZE, frame_mid_rect, frame_lo_rect, frame_hi_rect, s, frame_hi_h, \
+from data.ui_components import UI, Text, Image
+from ui_manager import ui_manager
+from data.visual_design import COLORS, FONTS, SQUARE_SIZE, frame_mid_rect, frame_lo_rect, frame_hi_rect, s, frame_hi_h, \
     frame_border, std_padding, std_dist
 from world_config import format_time_short
 
@@ -473,7 +471,6 @@ for i in range(4):
                ui_facilities_image.pos[1] + row * (f_i_g_c_size[1] + frame_border * 2)),
         size = (f_i_g_c_size[0], s(147)),
         layer = 1,
-        function = lambda: ui_manager.menu_switch("item"),
         text = [
             Text(
                 text = "object",
@@ -501,10 +498,6 @@ for i in range(4):
                 v_align = "top",
                 pad_x = frame_border,
                 pad_y = frame_border + s(16)
-            ),
-            Text(
-                text = "oid",
-                color = COLORS["transparent"]
             )
         ]
     )
@@ -632,7 +625,6 @@ for i in range(4):
              i_c_g_c_pos[1] + frame_border + row * (i_c_g_c_size[1] + frame_border)),
         size = (ui_item_description.size[0] // 2 - frame_border, s(147)),
         layer = 1,
-        function = lambda: ui_manager.item_display(),
         text = [
             Text(
                 text = "object",
@@ -660,10 +652,6 @@ for i in range(4):
                 v_align = "top",
                 pad_x = frame_border,
                 pad_y = frame_border + s(16)
-            ),
-            Text(
-                text = "oid",
-                color = COLORS["transparent"]
             )
         ]
     )
@@ -842,7 +830,6 @@ for i in range(3):
         size = (frame_mid_rect[2] - comms_gc_size, comms_gc_size),
         fill = COLORS["cyan_lo"],
         layer = 0,
-        function = lambda: ui_manager.menu_switch("convo"),
         text = [
             Text(
                 text = "Firstname Lastname",
@@ -868,10 +855,6 @@ for i in range(3):
                 h_align = "left",
                 pad_y = int(std_padding * 3.5),
                 pad_x = frame_border * 2,
-            ),
-            Text(
-                text = "cid",
-                color = COLORS["transparent"]
             ),
             Text(
                 text = "Day DD, HH:MM",

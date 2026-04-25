@@ -29,7 +29,7 @@ class Game:
     def comm_send(self, comm:Comm, message:dict):
         timestamp = self.world.time
 
-        comm.history.append((message, False, timestamp))
+        comm.history.insert(0, (message, False, timestamp))
         comm.transcribe(message, True, timestamp)
 
         print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
@@ -39,13 +39,13 @@ class Game:
             comm.ping
         ))
 
-    def comm_responses(self, comm:Comm) -> list[dict]:
+    def comm_responses(self, comm:Comm):
         kinds = []
 
         if comm.kind==CommKind.HAI:
             if comm.history:
-                if comm.history[-1][1]: #if last was received
-                    last=comm.history[-1][0]
+                if comm.history[0][1]: #if last was received
+                    last=comm.history[0][0]
                     if last["kind"].name=="GREETING":
                         kinds.extend([
                             "GREETING",
@@ -64,7 +64,7 @@ class Game:
 
         chosen = self.best_message(comm, kind)
 
-        comm.history.append((chosen, True, timestamp))
+        comm.history.insert(0,(chosen, True, timestamp))
         comm.transcribe(chosen, True, timestamp)
         comm.new_message = True
         print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")

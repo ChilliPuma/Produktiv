@@ -198,9 +198,9 @@ class Area:
         self.aid = aid
         self.level = level
         self.area = area
-        self.staff = staff or []
+        self.staff = staff if staff is not None else []
         self.staff_max = staff_max
-        self.inventory = inventory or []
+        self.inventory = inventory if inventory is not None else []
 
     def used_area(self) -> float:
         used_area = 0.0
@@ -318,7 +318,7 @@ class Comm:
         lines=text_lines(message["text"], self.char)
         if received:
             for line in lines:
-                self.transcript.append((line, "left", timestamp))
+                self.transcript.insert(0, (line, "left", timestamp))
         else:
             for line in lines:
-                self.transcript.append((line, "right", timestamp))
+                self.transcript.insert(0, (line, "right", timestamp))

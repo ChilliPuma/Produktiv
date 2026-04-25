@@ -18,28 +18,39 @@ scale_factor = 0
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 game_surface = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
 
-FONTS = {}
-COLORS = {}
+FONTS={}
+COLORS={}
 
-BASE_RES = 720
+BASE_RES=720
 
-frame_hi_h = 0
-frame_lo_h = 0
-frame_mid_h = 0
-frame_hi_rect = (0, 0, 0, 0)
-frame_mid_rect = (0, 0, 0, 0)
-frame_lo_rect = (0, 0, 0, 0)
+frame_hi_h=0
+frame_lo_h=0
+frame_mid_h=0
+frame_hi_rect=(0, 0, 0, 0)
+frame_mid_rect=(0, 0, 0, 0)
+frame_lo_rect=(0, 0, 0, 0)
 
-frame_border = 0
+frame_border=0
 
-std_padding = 0
-std_dist = 0
+std_padding=0
+std_dist=0
 
+color_map={
+    "main": "yellow",
+    "saves": "blue",
+    "facilities": "orange",
+    "items": "green",
+    "comms": "cyan",
+    "convo": "blue",
+    "convo_r": "orange",
+    "convo_l": "cyan",
+    "convo_text": "blue",
+}
 
 def s(n: int):
     global scale_factor, SQUARE_SIZE
-    scale_factor = SQUARE_SIZE / BASE_RES
-    return int(n * scale_factor)
+    scale_factor=SQUARE_SIZE / BASE_RES
+    return int(n*scale_factor)
 
 
 def init_display():

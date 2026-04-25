@@ -1030,8 +1030,8 @@ pfp_icon_size = (ui_convo_up.pos[1] - frame_hi_h - ui_convo_header.size[1] - fra
 c_g_c_size = (frame_mid_rect[2] - pfp_icon_size, pfp_icon_size)
 
 for i in range(4):
-    globals()[f"ui_convo_grid_cell_l_{i+1}"] = UI(
-        name = f"convo_grid_cell_l_{i+1}",
+    globals()[f"ui_convo_l_grid_cell_{i+1}"] = UI(
+        name = f"convo_l_grid_cell_{i+1}",
         pos = (pfp_icon_size, frame_hi_h + ui_convo_header.size[1] + frame_border +
                i * c_g_c_size[1]),
         size = c_g_c_size,
@@ -1059,8 +1059,8 @@ for i in range(4):
         ]
     )
     grid_cell_pos = ui_manager.ui_lookup(f"convo_grid_cell_l_{i+1}").pos
-    globals()[f"ui_convo_grid_cell_l_pfp_{i+1}"] = UI(
-        name = f"convo_grid_cell_l_pfp_{i+1}",
+    globals()[f"ui_convo_l_grid_cell_pfp_{i+1}"] = UI(
+        name = f"convo_l_grid_cell_pfp_{i+1}",
         pos = (grid_cell_pos[0] - pfp_icon_size, grid_cell_pos[1]),
         size = (pfp_icon_size, pfp_icon_size),
         fill = COLORS["cyan_dead"],
@@ -1073,8 +1073,8 @@ for i in range(4):
         ]
     )
 
-    globals()[f"ui_convo_grid_cell_r_{i+1}"] = UI(
-        name = f"convo_grid_cell_r_{i+1}",
+    globals()[f"ui_convo_r_grid_cell_{i+1}"] = UI(
+        name = f"convo_r_grid_cell_{i+1}",
         pos = (grid_cell_pos[0] - pfp_icon_size, grid_cell_pos[1]),
         size = c_g_c_size,
         fill = COLORS["orange_lo"],
@@ -1100,8 +1100,8 @@ for i in range(4):
             )
         ]
     )
-    globals()[f"ui_convo_grid_cell_r_pfp_{i+1}"] = UI(
-        name = f"convo_grid_cell_r_pfp_{i+1}",
+    globals()[f"ui_convo_r_grid_cell_pfp_{i+1}"] = UI(
+        name = f"convo_r_grid_cell_pfp_{i+1}",
         pos = (frame_mid_rect[2] - pfp_icon_size, grid_cell_pos[1]),
         size = (pfp_icon_size, pfp_icon_size),
         fill = COLORS["orange_dead"],

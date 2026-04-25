@@ -6,7 +6,7 @@ import pygame
 from game import game
 from loader import saves_dir
 from data.ui_components import UI, Text, unify
-from data.visual_design import COLORS, FONTS
+from data.visual_design import COLORS, FONTS, color_map
 from world_config import format_time
 
 
@@ -30,6 +30,13 @@ class UIManager:
     cmms_scroll = 0
     conv_scroll = 0
     conv_txt_scroll = 0
+    scroll={
+        "facilities_inventory": 0,
+        "item_contents": 0,
+        "comms": 0,
+        "convo": 0,
+        "convo_text": 0,
+    }
 
     def ui_lookup(self, ui_name: str) -> UI | None:
         for ui in UI.elements:
@@ -46,24 +53,6 @@ class UIManager:
             if hasattr(ui, key):
                 setattr(ui, key, value)
         ui.old = True
-
-    def check_scroll(self, menu: str, color: str, items: int, cells: int, scroll: int):
-        ui_up = self.ui_lookup(menu + "_up")
-        ui_down = self.ui_lookup(menu + "_down")
-
-        if items > cells + cells * scroll:
-            ui_down.fill = COLORS[f"{color}_mid"]
-            ui_down.text[0].color = COLORS[f"{color}_hi"]
-        else:
-            ui_down.fill = COLORS[f"{color}_dead"]
-            ui_down.text[0].color = COLORS["black"]
-
-        if scroll != 0:
-            ui_up.fill = COLORS[f"{color}_mid"]
-            ui_up.text[0].color = COLORS[f"{color}_hi"]
-        else:
-            ui_up.fill = COLORS[f"{color}_dead"]
-            ui_up.text[0].color = COLORS["black"]
 
     def tick(self, dt):
         if game.world and not game.world.time_stop:
@@ -134,93 +123,29 @@ class UIManager:
 
     def menu_switch(self, menu_name: str):
         if menu_name == "start":
-            self.perma_ui_color_switch("yellow")
             self.menu_history.clear()
             if game.world:
                 game.world.time_stop = True
-
         elif menu_name == "saves":
-            self.perma_ui_color_switch("blue")
-
-            saves_list = []
-            for path in saves_dir.glob("*.json"):
-                try:
-                    with path.open("r", encoding="utf-8") as f:
-                        data = json.load(f)
-                except (json.JSONDecodeError, OSError):
-                    continue
-
-                facilities = data.get("facilities", {})
-                count = sum(1 for f in facilities.values() if f.get("owner") == "player")
-                saves_list.append(
-                    {
-                        "filename": path.name,
-                        "run_time": data.get("time"),
-                        "facilities": count,
-                    }
-                )
-
-            for i in range(1, 6):
-                self.ui_update(
-                    f"{menu_name}_grid_cell_{i}",
-                    text=[
-                        Text(
-                            text="[empty]",
-                            h_align="left",
-                            font=FONTS["topaz_m"],
-                            color=COLORS["gray_mid"],
-                        ),
-                        Text(
-                            h_align="right",
-                            font=FONTS["topaz_s"],
-                            color=COLORS["gray_mid"],
-                        ),
-                    ],
-                )
-
-            for i, save in enumerate(saves_list, start=1):
-                grid_cell_ui = self.ui_lookup(f"{menu_name}_grid_cell_{i}")
-                grid_cell_ui.text[0].text = save["filename"]
-                grid_cell_ui.text[0].color = COLORS["white"]
-                grid_cell_ui.text[1].text = format_time(save["run_time"])
-                grid_cell_ui.text[1].color = COLORS["white"]
-                grid_cell_ui.fill = COLORS["blue_mid"]
-
+            pass
         elif menu_name == "new_save":
-            self.perma_ui_color_switch("cyan")
-
+            pass
         elif menu_name == "main":
-            self.perma_ui_color_switch("orange")
-
+            pass
         elif menu_name == "facilities":
-            self.perma_ui_color_switch("orange")
             self.facility_inv_scroll = 0
-            self.facilities_display(game.world.owned_facilities[self.viewed_facility])
-
+            self.facilities_display()
         elif menu_name == "item":
-            self.perma_ui_color_switch("green")
             self.item_display()
-
         elif menu_name == "comms":
-            self.perma_ui_color_switch("cyan")
             self.comms_display()
-
         elif menu_name == "convo":
-            self.perma_ui_color_switch("blue")
             self.convo_display()
 
         self.menu_history.append(menu_name)
         print(f"[ui] menu -> {menu_name}")
-
-        for ui in UI.elements:
-            if ui.layer == 33:
-                continue
-            if ui.name.startswith(menu_name):
-                ui.visible = True
-                ui.old = True
-            elif ui.visible:
-                ui.visible = False
-                ui.old = True
+        self.perma_ui_color_switch(menu_name)
+        self.menu_refresh()
 
     def menu_back(self):
         if len(self.menu_history) <= 1:
@@ -251,6 +176,18 @@ class UIManager:
             print(f"[ui] pointer comm -> {ui.pointer.cid}")
             self.view_comm(ui.pointer)
 
+    def menu_scroll(self, menu:str, scroll:int):
+        self.scroll[menu]=(self.scroll[menu]+scroll)
+        print(f"[ui] item contents scroll -> {menu}: {scroll}")
+        if menu=="facilities":
+            self.facilities_display()
+        elif menu=="item":
+            self.item_display()
+        elif menu=="comms":
+            self.comms_display()
+        elif menu=="convo":
+            self.convo_display()
+
     def new_save_button(self, save_file_name: str):
         print(f"[ui] new save requested: {save_file_name or '[auto]'}")
         self.menu_switch("saves")
@@ -277,11 +214,82 @@ class UIManager:
             print("[ui] continue game")
             self.game_load()
 
-    def facilities_display(self, facility):
-        facility_inventory = []
+    def fill_grid_menu(
+            self,
+            menu: str,
+            content: list[dict],
+            mapping: dict[tuple[str, int], str]
+    ):
+        gcs=0
+        for ui in UI.elements:
+            if ui.name.startswith(f"{menu}_grid_cell"):
+                gcs+=1
+
+        view_start=self.scroll[menu]*gcs
+        view_end=view_start+gcs
+
+        ui_up = self.ui_lookup(menu + "_up")
+        ui_down = self.ui_lookup(menu + "_down")
+        if len(content) > view_end:
+            ui_down.fill=COLORS[f"{color_map[menu]}_mid"]
+            ui_down.text[0].color=COLORS[f"{color_map[menu]}_hi"]
+            ui_down.function=lambda: self.menu_scroll(menu, 1)
+        else:
+            ui_down.fill=COLORS[f"{color_map[menu]}_dead"]
+            ui_down.text[0].color=COLORS["black"]
+            ui_down.function=None
+        if self.scroll[menu]!=0:
+            ui_up.fill = COLORS[f"{color_map[menu]}_mid"]
+            ui_up.text[0].color = COLORS[f"{color_map[menu]}_hi"]
+            ui_up.function=lambda: self.menu_scroll(menu, -1)
+        else:
+            ui_up.fill = COLORS[f"{color_map[menu]}_dead"]
+            ui_up.text[0].color = COLORS["black"]
+            ui_up.function=None
+
+        viewed_content = content[view_start:view_end]
+        for i in range(gcs):
+            ui = self.ui_lookup(f"{menu}_grid_cell_{i + 1}")
+            for target, content_key in mapping.items():
+                if target[0]=="text":
+                    if len(viewed_content) <= i:
+                        ui.text[target[1]] = ""
+                        ui.fill=COLORS["transparent"]
+                        continue
+                    ui.text[target[1]] = viewed_content[i][content_key]
+                    ui.fill=COLORS[f"{color_map[menu]}_lo"]
+                elif target[0]=="image":
+                    ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
+                    if len(viewed_content) <= i:
+                        ui_image.image[target[1]].png = ""
+                        ui_image.fill=COLORS["transparent"]
+                        continue
+                    ui_image.image[target[1]].png = viewed_content[i][content_key]
+                    ui_image.fill=COLORS[f"{color_map[menu]}_dead"]
+                elif target[0]=="pointer":
+                    if len(viewed_content) <= i:
+                        ui.pointer=None
+                        continue
+                    ui.pointer=viewed_content[i][content_key]
+                elif target[0]=="function":
+                    if len(viewed_content) <= i:
+                        ui.function=None
+                        continue
+                    ui.function=viewed_content[i][content_key]
+
+
+    def facilities_display(self):
+        facility=game.world.owned_facilities[self.viewed_facility]
+
+        inventory=[]
         for area_name, area in facility.areas.items():
             for obj in area.inventory:
-                facility_inventory.append((obj, area_name))
+                inventory.append({
+                    "obj_name": obj.name, "obj_area": obj.area,
+                    "obj_image": obj.oid.rsplit("_", 1)[0], "area_name": area_name,
+                    "pointer": obj.oid, "function": self.follow_pointer
+                })
+        inventory.sort(key=lambda o: o["obj_area"], reverse=True)
 
         self.ui_lookup("facilities_header").text[0].text = facility.name
         self.ui_lookup("facilities_image").image[0].png = facility.fid
@@ -293,66 +301,35 @@ class UIManager:
         self.ui_lookup("facilities_power").text[0].text = f"/{unify(facility.power, 'power')}"
         self.ui_lookup("facilities_power").text[1].text = "x"
 
-        cells = 4
-        self.check_scroll(
-            "facilities_inventory", "orange", len(facility_inventory), cells, self.facility_inv_scroll
+        self.fill_grid_menu(
+            "facilities",
+            inventory,
+            {
+                ("text", 0): "obj_name",
+                ("text", 1): "area_name",
+                ("text", 2): "obj_area",
+                ("image", 0): "obj_image",
+                ("pointer", 0): "pointer",
+                ("function", 0): "function"
+
+            }
         )
-
-        facility_inventory.sort(key=lambda item: item[0].area, reverse=True)
-
-        for i in range(4):
-            img = self.ui_lookup(f"facilities_inventory_grid_cell_image_{i + 1}")
-            cell = self.ui_lookup(f"facilities_inventory_grid_cell_{i + 1}")
-
-            if len(facility_inventory) <= i + self.facility_inv_scroll * 4:
-                img.image[0].png = ""
-                img.fill = COLORS["black"]
-                cell.text[0].text = ""
-                cell.text[1].text = ""
-                cell.text[2].text = ""
-                cell.fill = COLORS["black"]
-                cell.function = None
-                cell.pointer = None
-                continue
-
-            item, area_name = facility_inventory[i + self.facility_inv_scroll * 4]
-            img.image[0].png = item.oid.rsplit("_", 1)[0]
-            img.fill = COLORS["orange_dead"]
-            cell.text[0].text = item.name
-            cell.text[1].text = area_name
-            cell.text[2].text = unify(item.area, "area")
-            cell.fill = COLORS["orange_lo"]
-            cell.pointer = item
-            cell.function = lambda ui_name=cell.name: self.follow_pointer(ui_name)
-
-    def facilities_inventory_scroll(self, scroll: int):
-        down = self.ui_lookup("facilities_inventory_down")
-        up = self.ui_lookup("facilities_inventory_up")
-
-        if scroll > 0 and down.fill == COLORS["orange_dead"]:
-            return
-        if scroll < 0 and up.fill == COLORS["orange_dead"]:
-            return
-
-        self.facility_inv_scroll += scroll
-        print(f"[ui] facilities scroll -> {self.facility_inv_scroll}")
-        self.facilities_display(game.world.owned_facilities[self.viewed_facility])
         self.menu_refresh()
 
     def view_item(self, item):
-        self.item_cont_scroll = 0
+        self.scroll["item_contents"]=0
         self.viewed_item_history.append(item)
         print(f"[ui] view item -> {item.oid}")
-        if not self.menu_history or self.menu_history[-1] != "item":
-            self.menu_switch("item")
-        else:
+        if self.menu_history[-1]=="item":
             self.item_display()
+        else:
+            self.menu_switch("item")
 
     def item_display(self):
         if not self.viewed_item_history:
             return
-
         item = self.viewed_item_history[-1]
+
         self.ui_lookup("item_header").text[0].text = item.name
         self.ui_lookup("item_description").text[0].text = item.description
         self.ui_lookup("item_image").image[0].png = item.oid.rsplit("_", 1)[0]
@@ -360,52 +337,26 @@ class UIManager:
         self.ui_lookup("item_volume").text[1].text = unify(item.volume, "volume")
 
         item_contents = []
-        if item.storage:
-            item_contents = [(obj, obj.volume) for obj in item.storage["content"] if item.storage]
-
-        cells = 4
-        self.check_scroll("item_contents", "green", len(item_contents), cells, self.item_cont_scroll)
-        item_contents.sort(key=lambda c: c[1], reverse=True)
-
-        for i in range(4):
-            cell = self.ui_lookup(f"item_contents_grid_cell_{i + 1}")
-            img = self.ui_lookup(f"item_contents_grid_cell_image_{i + 1}")
-
-            if len(item_contents) <= i + self.item_cont_scroll * 4:
-                img.image[0].png = ""
-                img.fill = COLORS["black"]
-                cell.text[0].text = ""
-                cell.text[1].text = ""
-                cell.text[2].text = ""
-                cell.fill = COLORS["black"]
-                cell.function = None
-                cell.pointer = None
-                continue
-
-            content_item = item_contents[i + self.item_cont_scroll * 4][0]
-            img.image[0].png = content_item.oid.rsplit("_", 1)[0]
-            img.fill = COLORS["green_dead"]
-            cell.text[0].text = content_item.name
-            cell.text[1].text = unify(content_item.weight, "weight")
-            cell.text[2].text = unify(content_item.volume, "volume")
-            cell.fill = COLORS["green_lo"]
-            cell.pointer = content_item
-            cell.function = lambda ui_name=cell.name: self.follow_pointer(ui_name)
+        if item.storage and item.storage["kind"]=="OBJECT":
+            item_contents = [{
+                "obj_name": obj.name,
+                "obj_weight": obj.total_weight(),
+                "obj_volume": obj.volume,
+                "obj_image": obj.oid.rsplit("_", 1)[0],
+            } for obj in item.storage["content"]]
+        item_contents.sort(key=lambda c: c["obj_volume"], reverse=True)
+        self.fill_grid_menu(
+            "item_contents",
+            item_contents,
+            {
+                ("text", 0): "obj_name",
+                ("text", 1): "obj_weight",
+                ("text", 2): "obj_volume",
+                ("image", 0): "obj_image",
+            }
+        )
 
         self.menu_refresh()
-
-    def item_contents_scroll(self, scroll: int):
-        down = self.ui_lookup("item_contents_down")
-        up = self.ui_lookup("item_contents_up")
-
-        if scroll > 0 and down.fill == COLORS["green_dead"]:
-            return
-        if scroll < 0 and up.fill == COLORS["green_dead"]:
-            return
-
-        self.item_cont_scroll += scroll
-        print(f"[ui] item contents scroll -> {self.item_cont_scroll}")
-        self.item_display()
 
     def view_comm(self, comm):
         self.viewed_comm = comm.cid
@@ -488,7 +439,7 @@ class UIManager:
         texts = comm.transcript[start:end]
         filled = 0
 
-        while filled < 4:
+        while filled < gcs:
             gc_l = self.ui_lookup(f"convo_grid_cell_l_{4 - filled}")
             gc_l_pfp = self.ui_lookup(f"convo_grid_cell_l_pfp_{4 - filled}")
             gc_r = self.ui_lookup(f"convo_grid_cell_r_{4 - filled}")
@@ -534,11 +485,18 @@ class UIManager:
         txt_start = -txt_gcs * (self.conv_txt_scroll + 1)
         txt_end = -txt_gcs * self.conv_txt_scroll if self.conv_txt_scroll != 0 else None
         txt_texts = comm.responses[start:end]
-        filled = 0
+        txt_filled = gcs
 
         self.check_scroll(
             "convo_text", "blue", len(comm.responses),
             txt_gcs, self.conv_txt_scroll
+        )
+
+        self.fill_grid_menu(
+            {
+                "menu": "convo_text",
+
+            }
         )
 
         self.menu_refresh()

@@ -7,7 +7,7 @@ from game import game
 from loader import saves_dir
 from data.ui_components import UI, Text, unify
 from data.visual_design import COLORS, FONTS, color_map
-from world_config import format_time
+from world_config import format_time, format_time_short
 
 
 class UIManager:
@@ -164,17 +164,16 @@ class UIManager:
         print(f"[ui] back -> {previous_menu}")
         self.menu_switch(previous_menu)
 
-    def follow_pointer(self, ui_name: str):
-        ui = self.ui_lookup(ui_name)
-        if ui is None or ui.pointer is None:
+    def follow_pointer(self, pointer):
+        if pointer is None:
             return
 
-        if hasattr(ui.pointer, "oid"):
-            print(f"[ui] pointer item -> {ui.pointer.oid}")
-            self.view_item(ui.pointer)
-        elif hasattr(ui.pointer, "cid"):
-            print(f"[ui] pointer comm -> {ui.pointer.cid}")
-            self.view_comm(ui.pointer)
+        if hasattr(pointer, "oid"):
+            print(f"[ui] pointer item -> {pointer.oid}")
+            self.view_item(pointer)
+        elif hasattr(pointer, "cid"):
+            print(f"[ui] pointer comm -> {pointer.cid}")
+            self.view_comm(pointer)
 
     def menu_scroll(self, menu:str, scroll:int):
         self.scroll[menu]=(self.scroll[menu]+scroll)
@@ -250,33 +249,37 @@ class UIManager:
         viewed_content = content[view_start:view_end]
         for i in range(gcs):
             ui = self.ui_lookup(f"{menu}_grid_cell_{i + 1}")
+
             for target, content_key in mapping.items():
-                if target[0]=="text":
-                    if len(viewed_content) <= i:
-                        ui.text[target[1]] = ""
+                if len(viewed_content)<=i:
+                    if target[0]=="text":
+                        ui.text[target[1]]=""
                         ui.fill=COLORS["transparent"]
-                        continue
-                    ui.text[target[1]] = viewed_content[i][content_key]
+                    elif target[0]=="image":
+                        ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
+                        ui_image.image[target[1]].png = ""
+                        ui_image.fill=COLORS["transparent"]
+                    elif target[0]=="function":
+                        ui.function=None
+                        ui.pointer=None
+                    continue
+
+                entry=viewed_content[i]
+                if target[0]=="text":
+                    ui.text[target[1]]=entry[content_key]
                     ui.fill=COLORS[f"{color_map[menu]}_lo"]
                 elif target[0]=="image":
                     ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
-                    if len(viewed_content) <= i:
-                        ui_image.image[target[1]].png = ""
-                        ui_image.fill=COLORS["transparent"]
-                        continue
-                    ui_image.image[target[1]].png = viewed_content[i][content_key]
+                    ui_image.image[target[1]].png=entry[content_key]
                     ui_image.fill=COLORS[f"{color_map[menu]}_dead"]
-                elif target[0]=="pointer":
-                    if len(viewed_content) <= i:
-                        ui.pointer=None
-                        continue
-                    ui.pointer=viewed_content[i][content_key]
-                elif target[0]=="function":
-                    if len(viewed_content) <= i:
-                        ui.function=None
-                        continue
-                    ui.function=viewed_content[i][content_key]
-
+                if "function" not in entry:
+                    ui.function=None
+                    continue
+                if "pointer" not in entry:
+                    raise ValueError(f"Function defined without pointer for {ui.name}")
+                function, pointer=entry["function"], entry["pointer"]
+                ui.pointer=pointer
+                ui.function=lambda f=function, p=pointer: f(p)
 
     def facilities_display(self):
         facility=game.world.owned_facilities[self.viewed_facility]
@@ -287,7 +290,7 @@ class UIManager:
                 inventory.append({
                     "obj_name": obj.name, "obj_area": obj.area,
                     "obj_image": obj.oid.rsplit("_", 1)[0], "area_name": area_name,
-                    "pointer": obj.oid, "function": self.follow_pointer
+                    "pointer": obj, "function": self.follow_pointer
                 })
         inventory.sort(key=lambda o: o["obj_area"], reverse=True)
 
@@ -308,10 +311,7 @@ class UIManager:
                 ("text", 0): "obj_name",
                 ("text", 1): "area_name",
                 ("text", 2): "obj_area",
-                ("image", 0): "obj_image",
-                ("pointer", 0): "pointer",
-                ("function", 0): "function"
-
+                ("image", 0): "obj_image"
             }
         )
         self.menu_refresh()
@@ -343,6 +343,8 @@ class UIManager:
                 "obj_weight": obj.total_weight(),
                 "obj_volume": obj.volume,
                 "obj_image": obj.oid.rsplit("_", 1)[0],
+                "pointer": obj,
+                "function": self.follow_pointer
             } for obj in item.storage["content"]]
         item_contents.sort(key=lambda c: c["obj_volume"], reverse=True)
         self.fill_grid_menu(
@@ -370,12 +372,19 @@ class UIManager:
 
     def comms_display(self):
         if self.click_history[-1] not in ("back_button", "comms_up", "comms_down"):
-            self.cmms_scroll = 0
+            self.scroll["comms"]=0
 
-        contacts = [
-            (comm, comm.history[-1][2] if comm.history else None) for comm in game.world.comms.values()
+        contacts=[{
+            "contact_name": comm.recipient.name,
+            "contact_title": comm.recipient.title,
+            "contact_image": comm.recipient.pid,
+            "comm_last_text": comm.transcript[0]["text"],
+            "comm_last_time": format_time_short(comm.transcript[0][2]),
+            "pointer": comm,
+            "function": self.follow_pointer
+            } for comm in game.world.comms.values()
         ]
-        contacts.sort(key=lambda c: (c[0] != game.world.comms["hai"], -(c[1] or 0)))
+        contacts.sort(key=lambda c: (c["pointer"]!="hai", -(c[1] or 0)))
 
         gcs = 3
         self.check_scroll("comms", "cyan", len(contacts), gcs, self.cmms_scroll)
@@ -397,14 +406,14 @@ class UIManager:
                 continue
 
             comm = contacts[i + gcs * self.cmms_scroll][0]
-            last_text = comm.history[-1][0]["text"] if comm.history else ""
+            last_text = comm.history[0][0]["text"] if comm.history else ""
             if len(last_text) > 91:
                 last_text = last_text[:91] + "..."
 
             cell.text[0].text = comm.recipient.name
             cell.text[1].text = comm.recipient.title
             cell.text[2].text = last_text
-            cell.text[3].text = f"{format_time(comm.history[-1][2])}" if comm.history else ""
+            cell.text[3].text = f"{format_time(comm.history[0][2])}" if comm.history else ""
             cell.fill = COLORS["gray_mid"] if comm.cid == "hai" else COLORS["cyan_lo"]
             cell.pointer = comm
             cell.function = lambda ui_name=cell.name: self.follow_pointer(ui_name)

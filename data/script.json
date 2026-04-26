@@ -8,9 +8,9 @@
       "recipient": ""
     },
 
-    "TASK_NEW_r:hai_1": {
-      "mid": "TASK_NEW_r:hai_1",
-      "kind": "TASK_NEW",
+    "TASK_ADD_r:hai_1": {
+      "mid": "TASK_ADD_r:hai_1",
+      "kind": "TASK_ADD",
       "text": "Set up a new task for me.",
       "sender": "",
       "recipient": "hai"

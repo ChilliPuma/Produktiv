@@ -7,7 +7,7 @@ from game import game
 from loader import saves_dir
 from data.ui_components import UI, Text, unify
 from data.visual_design import COLORS, FONTS, color_map
-from world_config import format_time, format_time_short
+from world_config import format_time_short, format_time_short, format_time
 
 
 class UIManager:
@@ -26,7 +26,7 @@ class UIManager:
     viewed_item_history = []
     item_cont_scroll = 0
 
-    viewed_comm = ""
+    viewed_comm = None
     cmms_scroll = 0
     conv_scroll = 0
     conv_txt_scroll = 0
@@ -116,7 +116,8 @@ class UIManager:
                 ui.visible = False
                 ui.old = True
 
-    def perma_ui_color_switch(self, color: str):
+    def perma_ui_color_switch(self, menu: str):
+        color=color_map[menu]
         self.ui_update("permanent_borders", border=COLORS[f"{color}_border"])
         self.ui_update("back_button", fill=COLORS[f"{color}_lo"])
         self.ui_update("save_button", fill=COLORS[f"{color}_lo"])
@@ -133,7 +134,7 @@ class UIManager:
         elif menu_name == "main":
             pass
         elif menu_name == "facilities":
-            self.facility_inv_scroll = 0
+            self.scroll["facilities_inventory"]=0
             self.facilities_display()
         elif menu_name == "item":
             self.item_display()
@@ -184,7 +185,7 @@ class UIManager:
             self.item_display()
         elif menu=="comms":
             self.comms_display()
-        elif menu=="convo":
+        elif menu=="convo" or menu=="convo_text":
             self.convo_display()
 
     def new_save_button(self, save_file_name: str):
@@ -198,8 +199,8 @@ class UIManager:
 
         self.game_loaded = True
         game.world.time_stop = False
-        self.ui_lookup("time_bar").text[0].text = format_time(game.world.time)
-        print(f"[ui] game loaded at {format_time(game.world.time)}")
+        self.ui_lookup("time_bar").text[0].text = format_time_short(game.world.time)
+        print(f"[ui] game loaded at {format_time_short(game.world.time)}")
         self.menu_switch("main")
         self.ui_update("time_bar", visible=True)
 
@@ -221,14 +222,14 @@ class UIManager:
     ):
         gcs=0
         for ui in UI.elements:
-            if ui.name.startswith(f"{menu}_grid_cell"):
+            if ui.name.startswith(f"{menu}_grid_cell_") and not ui.name.startswith(f"{menu}_grid_cell_image_"):
                 gcs+=1
 
         view_start=self.scroll[menu]*gcs
         view_end=view_start+gcs
 
-        ui_up = self.ui_lookup(menu + "_up")
-        ui_down = self.ui_lookup(menu + "_down")
+        ui_up=self.ui_lookup(menu+"_up")
+        ui_down=self.ui_lookup(menu+"_down")
         if len(content) > view_end:
             ui_down.fill=COLORS[f"{color_map[menu]}_mid"]
             ui_down.text[0].color=COLORS[f"{color_map[menu]}_hi"]
@@ -253,7 +254,7 @@ class UIManager:
             for target, content_key in mapping.items():
                 if len(viewed_content)<=i:
                     if target[0]=="text":
-                        ui.text[target[1]]=""
+                        ui.text[target[1]].text=""
                         ui.fill=COLORS["transparent"]
                     elif target[0]=="image":
                         ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
@@ -266,12 +267,15 @@ class UIManager:
 
                 entry=viewed_content[i]
                 if target[0]=="text":
-                    ui.text[target[1]]=entry[content_key]
+                    ui.text[target[1]].text=entry[content_key]
                     ui.fill=COLORS[f"{color_map[menu]}_lo"]
                 elif target[0]=="image":
                     ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
                     ui_image.image[target[1]].png=entry[content_key]
                     ui_image.fill=COLORS[f"{color_map[menu]}_dead"]
+
+            if len(viewed_content) > i:
+                entry = viewed_content[i]
                 if "function" not in entry:
                     ui.function=None
                     continue
@@ -288,7 +292,7 @@ class UIManager:
         for area_name, area in facility.areas.items():
             for obj in area.inventory:
                 inventory.append({
-                    "obj_name": obj.name, "obj_area": obj.area,
+                    "obj_name": obj.name, "obj_area": unify(obj.area, "area"),
                     "obj_image": obj.oid.rsplit("_", 1)[0], "area_name": area_name,
                     "pointer": obj, "function": self.follow_pointer
                 })
@@ -305,7 +309,7 @@ class UIManager:
         self.ui_lookup("facilities_power").text[1].text = "x"
 
         self.fill_grid_menu(
-            "facilities",
+            "facilities_inventory",
             inventory,
             {
                 ("text", 0): "obj_name",
@@ -340,8 +344,8 @@ class UIManager:
         if item.storage and item.storage["kind"]=="OBJECT":
             item_contents = [{
                 "obj_name": obj.name,
-                "obj_weight": obj.total_weight(),
-                "obj_volume": obj.volume,
+                "obj_weight": unify(obj.total_weight(), "weight"),
+                "obj_volume": unify(obj.volume, "volume"),
                 "obj_image": obj.oid.rsplit("_", 1)[0],
                 "pointer": obj,
                 "function": self.follow_pointer
@@ -361,7 +365,7 @@ class UIManager:
         self.menu_refresh()
 
     def view_comm(self, comm):
-        self.viewed_comm = comm.cid
+        self.viewed_comm = comm
         self.conv_scroll = 0
         self.conv_txt_scroll = 0
         print(f"[ui] view comm -> {comm.cid}")
@@ -374,85 +378,58 @@ class UIManager:
         if self.click_history[-1] not in ("back_button", "comms_up", "comms_down"):
             self.scroll["comms"]=0
 
-        contacts=[{
+        contacts = [{
             "contact_name": comm.recipient.name,
             "contact_title": comm.recipient.title,
             "contact_image": comm.recipient.pid,
-            "comm_last_text": comm.transcript[0]["text"],
-            "comm_last_time": format_time_short(comm.transcript[0][2]),
+            "comm_last_text": (
+                (comm.history[0]["message"]["text"] if comm.history else "")[:91]
+            ),
+            "comm_last_time": (
+                format_time_short(comm.history[0]["timestamp"])
+                if comm.history else ""
+            ),
             "pointer": comm,
             "function": self.follow_pointer
-            } for comm in game.world.comms.values()
-        ]
-        contacts.sort(key=lambda c: (c["pointer"]!="hai", -(c[1] or 0)))
+        } for comm in game.world.comms.values()]
 
-        gcs = 3
-        self.check_scroll("comms", "cyan", len(contacts), gcs, self.cmms_scroll)
+        contacts.sort(
+            key=lambda c: (
+                c["pointer"].cid != "hai",
+                -c["pointer"].history[0]["timestamp"] if c["pointer"].history else 0
+            )
+        )
 
-        for i in range(gcs):
-            cell = self.ui_lookup(f"comms_grid_cell_{i + 1}")
-            img = self.ui_lookup(f"comms_grid_cell_image_{i + 1}")
-
-            if i >= len(contacts) - gcs * self.cmms_scroll:
-                cell.text[0].text = ""
-                cell.text[1].text = ""
-                cell.text[2].text = ""
-                cell.text[3].text = ""
-                cell.fill = COLORS["transparent"]
-                cell.function = None
-                cell.pointer = None
-                img.fill = COLORS["transparent"]
-                img.image[0].png = ""
-                continue
-
-            comm = contacts[i + gcs * self.cmms_scroll][0]
-            last_text = comm.history[0][0]["text"] if comm.history else ""
-            if len(last_text) > 91:
-                last_text = last_text[:91] + "..."
-
-            cell.text[0].text = comm.recipient.name
-            cell.text[1].text = comm.recipient.title
-            cell.text[2].text = last_text
-            cell.text[3].text = f"{format_time(comm.history[0][2])}" if comm.history else ""
-            cell.fill = COLORS["gray_mid"] if comm.cid == "hai" else COLORS["cyan_lo"]
-            cell.pointer = comm
-            cell.function = lambda ui_name=cell.name: self.follow_pointer(ui_name)
-            img.image[0].png = comm.recipient.pid
-            img.fill = COLORS["gray_lo"] if comm.cid == "hai" else COLORS["cyan_dead"]
+        self.fill_grid_menu(
+            "comms",
+            contacts,
+            {
+                ("text", 0): "contact_name",
+                ("text", 1): "contact_title",
+                ("text", 2): "comm_last_text",
+                ("text", 3): "comm_last_time",
+                ("image", 0): "contact_image"
+            }
+        )
 
         self.menu_refresh()
 
-    def comms_scroll(self, scroll: int):
-        up = self.ui_lookup("comms_up")
-        down = self.ui_lookup("comms_down")
-
-        if scroll > 0 and up.fill == COLORS["cyan_dead"]:
-            return
-        if scroll < 0 and down.fill == COLORS["cyan_dead"]:
-            return
-
-        self.cmms_scroll += scroll
-        print(f"[ui] comms scroll -> {self.cmms_scroll}")
-        self.comms_display()
-
     def convo_display(self):
-        if self.viewed_comm not in game.world.comms:
-            return
+        comm=self.viewed_comm
 
-        comm = game.world.comms[self.viewed_comm]
         self.ui_lookup("convo_header").text[0].text = comm.recipient.name
 
-        gcs = 4
-        start = -gcs * (self.conv_scroll + 1)
-        end = -gcs * self.conv_scroll if self.conv_scroll != 0 else None
-        texts = comm.transcript[start:end]
-        filled = 0
+        gcs=4
+        start=gcs*self.conv_scroll
+        end=gcs+gcs*self.conv_scroll
+        texts=comm.transcript[start:end]
+        filled=0
 
-        while filled < gcs:
-            gc_l = self.ui_lookup(f"convo_grid_cell_l_{4 - filled}")
-            gc_l_pfp = self.ui_lookup(f"convo_grid_cell_l_pfp_{4 - filled}")
-            gc_r = self.ui_lookup(f"convo_grid_cell_r_{4 - filled}")
-            gc_r_pfp = self.ui_lookup(f"convo_grid_cell_r_pfp_{4 - filled}")
+        while filled<gcs:
+            gc_l=self.ui_lookup(f"convo_l_grid_cell_{gcs-filled}")
+            gc_l_pfp=self.ui_lookup(f"convo_l_grid_cell_image_{gcs-filled}")
+            gc_r=self.ui_lookup(f"convo_r_grid_cell_{gcs-filled}")
+            gc_r_pfp=self.ui_lookup(f"convo_r_grid_cell_image_{gcs-filled}")
 
             if filled >= len(texts):
                 gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
@@ -462,66 +439,50 @@ class UIManager:
                 filled += 1
                 continue
 
-            text = texts[-1 - filled]
-            side = text[1] if len(text) > 1 else None
-            timestamp = text[2] if len(text) > 2 else None
+            entry=texts[filled]
+            text=entry["text"]
+            side=entry["side"]
+            timestamp=entry["timestamp"]
 
-            if side == "right":
-                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
-                gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
-                gc_r.text[0].text = text[0]
-                gc_r.text[1].text = format_time(timestamp) if timestamp is not None else ""
-                gc_r.fill = COLORS["orange_lo"]
-                gc_r_pfp.image[0].png, gc_r_pfp.fill = comm.sender.pid, COLORS["transparent"]
-            elif side == "left":
-                gc_l.text[0].text = text[0]
-                gc_l.text[1].text = format_time(timestamp) if timestamp is not None else ""
-                gc_l.fill = COLORS["cyan_lo"]
-                gc_l_pfp.image[0].png, gc_l_pfp.fill = comm.recipient.pid, COLORS["transparent"]
-                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
-                gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
+            if side=="right":
+                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill="", "", COLORS["transparent"]
+                gc_l_pfp.image[0].png, gc_l_pfp.fill="", COLORS["transparent"]
+                gc_r.text[0].text=text
+                gc_r.text[1].text=format_time_short(timestamp) if timestamp is not None else ""
+                gc_r.fill=COLORS["orange_lo"]
+                gc_r_pfp.image[0].png, gc_r_pfp.fill=comm.sender.pid, COLORS["transparent"]
+            elif side=="left":
+                gc_l.text[0].text=text
+                gc_l.text[1].text=format_time_short(timestamp) if timestamp is not None else ""
+                gc_l.fill=COLORS["cyan_lo"]
+                gc_l_pfp.image[0].png, gc_l_pfp.fill=comm.recipient.pid, COLORS["transparent"]
+                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill="", "", COLORS["transparent"]
+                gc_r_pfp.image[0].png, gc_r_pfp.fill="", COLORS["transparent"]
             else:
-                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
-                gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
-                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
-                gc_r_pfp.image[0].png, gc_r_pfp.fill = "", COLORS["transparent"]
+                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill="", "", COLORS["transparent"]
+                gc_l_pfp.image[0].png, gc_l_pfp.fill="", COLORS["transparent"]
+                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill="", "", COLORS["transparent"]
+                gc_r_pfp.image[0].png, gc_r_pfp.fill="", COLORS["transparent"]
 
             filled += 1
 
-        self.check_scroll("convo", "cyan", len(comm.transcript), gcs, self.conv_scroll)
-
-        txt_gcs = 2
-        txt_start = -txt_gcs * (self.conv_txt_scroll + 1)
-        txt_end = -txt_gcs * self.conv_txt_scroll if self.conv_txt_scroll != 0 else None
-        txt_texts = comm.responses[start:end]
-        txt_filled = gcs
-
-        self.check_scroll(
-            "convo_text", "blue", len(comm.responses),
-            txt_gcs, self.conv_txt_scroll
+        self.fill_grid_menu(
+            "convo",
+            comm.transcript,
+            {}
         )
 
+        game.comm_responses(comm)
+        responses=comm.responses
         self.fill_grid_menu(
+            "convo_text",
+            responses,
             {
-                "menu": "convo_text",
-
+                ("text", 0): "text"
             }
         )
 
         self.menu_refresh()
-
-    def convo_scroll(self, scroll):
-        up = self.ui_lookup("convo_up")
-        down = self.ui_lookup("convo_down")
-
-        if scroll > 0 and up.fill == COLORS["cyan_dead"]:
-            return
-        if scroll < 0 and down.fill == COLORS["cyan_dead"]:
-            return
-
-        self.conv_scroll += scroll
-        print(f"[ui] convo scroll -> {self.conv_scroll}")
-        self.convo_display()
 
 
 ui_manager = UIManager()

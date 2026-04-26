@@ -938,7 +938,6 @@ ui_convo_down = UI(
     size = (ui_comms_up.size[0] - convo_send_size[0] // 2, scroll_button_y),
     fill = COLORS["cyan_dead"],
     layer = 0,
-    function = lambda: ui_manager.convo_scroll(1),
     text = [
         Text(
             text = "^",
@@ -974,7 +973,6 @@ ui_convo_up = UI(
     size = ui_convo_down.size,
     fill = COLORS["cyan_dead"],
     layer = 0,
-    function = lambda: ui_manager.convo_scroll(-1),
     text = [
         Text(
             text = "^",
@@ -1058,9 +1056,9 @@ for i in range(4):
             )
         ]
     )
-    grid_cell_pos = ui_manager.ui_lookup(f"convo_grid_cell_l_{i+1}").pos
-    globals()[f"ui_convo_l_grid_cell_pfp_{i+1}"] = UI(
-        name = f"convo_l_grid_cell_pfp_{i+1}",
+    grid_cell_pos = ui_manager.ui_lookup(f"convo_l_grid_cell_{i+1}").pos
+    globals()[f"ui_convo_l_grid_cell_image_{i+1}"] = UI(
+        name = f"convo_l_grid_cell_image_{i+1}",
         pos = (grid_cell_pos[0] - pfp_icon_size, grid_cell_pos[1]),
         size = (pfp_icon_size, pfp_icon_size),
         fill = COLORS["cyan_dead"],
@@ -1100,8 +1098,8 @@ for i in range(4):
             )
         ]
     )
-    globals()[f"ui_convo_r_grid_cell_pfp_{i+1}"] = UI(
-        name = f"convo_r_grid_cell_pfp_{i+1}",
+    globals()[f"ui_convo_r_grid_cell_image_{i+1}"] = UI(
+        name = f"convo_r_grid_cell_image_{i+1}",
         pos = (frame_mid_rect[2] - pfp_icon_size, grid_cell_pos[1]),
         size = (pfp_icon_size, pfp_icon_size),
         fill = COLORS["orange_dead"],

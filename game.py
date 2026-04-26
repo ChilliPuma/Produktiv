@@ -29,7 +29,9 @@ class Game:
     def comm_send(self, comm:Comm, message:dict):
         timestamp = self.world.time
 
-        comm.history.insert(0, (message, False, timestamp))
+        comm.history.insert(
+            0, {"message": message, "received": False, "timestamp": timestamp}
+        )
         comm.transcribe(message, True, timestamp)
 
         print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
@@ -44,8 +46,8 @@ class Game:
 
         if comm.kind==CommKind.HAI:
             if comm.history:
-                if comm.history[0][1]: #if last was received
-                    last=comm.history[0][0]
+                if comm.history[0]["received"]: #if last was received
+                    last=comm.history[0]["message"]
                     if last["kind"].name=="GREETING":
                         kinds.extend([
                             "GREETING",
@@ -55,8 +57,8 @@ class Game:
         kinds = list(set(kinds))
         candidates=[]
         for kind in kinds:
-            chosen = self.best_message(comm, MessageKind(kind))
-            candidates.extend(chosen)
+            chosen = self.best_message(comm, MessageKind[kind])
+            candidates.append(chosen)
         print(f"[game] {comm.cid} responses updated")
         comm.responses=candidates
 
@@ -64,7 +66,9 @@ class Game:
 
         chosen = self.best_message(comm, kind)
 
-        comm.history.insert(0,(chosen, True, timestamp))
+        comm.history.insert(
+            0, {"message": chosen, "received": True, "timestamp": timestamp}
+        )
         comm.transcribe(chosen, True, timestamp)
         comm.new_message = True
         print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")
@@ -76,14 +80,14 @@ class Game:
             if message["kind"] != kind:
                 continue
             else:
-                if message["sender"] and message["sender"] != comm.recipient:
+                if message["sender"] and message["sender"] != comm.sender:
                     continue
-                elif message["sender"] == comm.recipient:
+                elif message["sender"] == comm.sender:
                     points += 1
 
-                if message["recipient"] and message["recipient"] != comm.sender:
+                if message["recipient"] and message["recipient"] != comm.recipient:
                     continue
-                elif message["recipient"] == comm.sender:
+                elif message["recipient"] == comm.recipient:
                     points += 1
 
             candidates.append((message, points))
@@ -92,7 +96,8 @@ class Game:
         chosen=random.choice(
             candidates
         )[0] if candidates else {
-            "text": kind.name
+            "text": kind.name,
+            "kind": kind
         }
         return chosen
 
@@ -284,14 +289,18 @@ class Game:
                 sender=world.people[comm["sender"]],
                 recipient=world.people[comm["recipient"]],
                 history=[
-                    (
-                        self.script["messages"][message["mid"]],
-                        message["received"],
-                        message["timestamp"]
-                    ) for message in comm["history"]
+                    {
+                        "message": self.script["messages"][message["mid"]],
+                        "received": message["received"],
+                        "timestamp": message["timestamp"]
+                    } for message in comm["history"]
                 ],
                 ping=comm["ping"]
             )
+            for message in comm["history"]:
+                world.comms["cid"].transcribe(
+                    message["message"], message["received"], message["timestamp"]
+                )
 
         self.plot = plot
         print(

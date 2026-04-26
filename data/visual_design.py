@@ -36,10 +36,13 @@ std_padding=0
 std_dist=0
 
 color_map={
-    "main": "yellow",
+    "start": "yellow",
+    "main": "orange",
     "saves": "blue",
     "facilities": "orange",
-    "items": "green",
+    "facilities_inventory": "orange",
+    "item": "green",
+    "item_contents": "green",
     "comms": "cyan",
     "convo": "blue",
     "convo_r": "orange",

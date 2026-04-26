@@ -292,7 +292,8 @@ class Comm:
         kind: CommKind,
         sender: str, #pid
         recipient: str, #pid
-        history: list[tuple[dict, bool, float]] = None, #message dict, received, timestamp
+        history: list[dict] = None, #message dict, received, timestamp
+        transcript: list[dict] = None, #message text, side, timestamp
         responses: list[dict] = None,
         ping: float=2.0
         ):
@@ -302,23 +303,24 @@ class Comm:
         self.sender=sender
         self.recipient=recipient
 
-        self.history: list[tuple[dict, bool, float]] = history if history is not None else []
-        self.transcript: list=[] #text, "left" or "right", "timestamp" FIX TYPE HINT AND ADD INIT
-        self.responses: list[dict] = responses if responses is not None else []
+        self.history: list[dict]=history if history is not None else []
+        self.transcript: list[dict]=transcript if transcript is not None else []
+        self.responses: list[dict]=responses if responses is not None else []
 
         self.ping=ping
         self.new_message=False
 
         self.char=81
 
-        for message, received, timestamp in self.history:
-            self.transcribe(message, received, timestamp)
-
     def transcribe(self, message: dict, received: bool, timestamp: float):
         lines=text_lines(message["text"], self.char)
         if received:
             for line in lines:
-                self.transcript.insert(0, (line, "left", timestamp))
+                self.transcript.insert(
+                    0, {"text": line, "side": "left", "timestamp": timestamp}
+                )
         else:
             for line in lines:
-                self.transcript.insert(0, (line, "right", timestamp))
+                self.transcript.insert(
+                    0, {"text": line, "side": "right", "timestamp": timestamp}
+                )

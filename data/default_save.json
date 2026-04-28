@@ -172,7 +172,7 @@
           "new_game": true
         },
         "states": {
-          "time": 300
+          "time": 120
         }
       },
       "on_trigger": {

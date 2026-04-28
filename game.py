@@ -57,14 +57,14 @@ class Game:
         kinds = list(set(kinds))
         candidates=[]
         for kind in kinds:
-            chosen = self.best_message(comm, MessageKind[kind])
+            chosen=self.best_message(comm, MessageKind[kind], False)
             candidates.append(chosen)
         print(f"[game] {comm.cid} responses updated")
         comm.responses=candidates
 
     def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
 
-        chosen = self.best_message(comm, kind)
+        chosen = self.best_message(comm, kind, True)
 
         comm.history.insert(
             0, {"message": chosen, "received": True, "timestamp": timestamp}
@@ -73,23 +73,31 @@ class Game:
         comm.new_message = True
         print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")
 
-    def best_message(self, comm:Comm, kind: MessageKind) -> dict:
+    def best_message(self, comm:Comm, kind: MessageKind, received: bool) -> dict:
         candidates=[]
         for message in self.script["messages"].values():
             points = 0
-            if message["kind"] != kind:
+            if message["kind"]!=kind:
                 continue
-            else:
-                if message["sender"] and message["sender"] != comm.sender:
-                    continue
-                elif message["sender"] == comm.sender:
-                    points += 1
-
-                if message["recipient"] and message["recipient"] != comm.recipient:
-                    continue
-                elif message["recipient"] == comm.recipient:
-                    points += 1
-
+            sender, recipient=message["sender"], message["recipient"]
+            if sender:
+                if received:
+                    if sender!=comm.recipient:
+                        continue
+                else:
+                    if not received:
+                        if sender!=comm.sender:
+                            continue
+                points+=1
+            if recipient:
+                if received:
+                    if recipient!=comm.sender:
+                        continue
+                else:
+                    if not received:
+                        if recipient!=comm.recipient:
+                            continue
+                points+=1
             candidates.append((message, points))
         candidates.sort(key=lambda x: x[1], reverse=True)
         candidates=candidates[:3]

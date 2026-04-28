@@ -122,21 +122,23 @@ class UI:
         fill: tuple[int, int, int, int] = (0, 0, 0, 0),
         border: tuple[int, int, int, int, int] = (0, 0, 0, 0, 0),
         text: list[Text] = None,
-        image: list[Image] = None,
+        image: list[Image]=None,
         function=None,
         pointer=None,
+        selected: bool=False,
     ):
-        self.name = name
-        self.pos = pos
-        self.size = size
-        self.layer = layer
-        self.visible = visible
-        self.fill = fill
-        self.border = border
-        self.text = text or []
-        self.image = image or []
-        self.function = function
-        self.pointer = pointer
+        self.name=name
+        self.pos=pos
+        self.size=size
+        self.layer=layer
+        self.visible=visible
+        self.fill=fill
+        self.border=border
+        self.text=text or []
+        self.image=image or []
+        self.function=function
+        self.pointer=pointer
+        self.selected=selected
 
         self.surf = pygame.Surface(size, pygame.SRCALPHA)
         self.old = True

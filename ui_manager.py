@@ -7,7 +7,7 @@ from game import game
 from loader import saves_dir
 from data.ui_components import UI, Text, unify
 from data.visual_design import COLORS, FONTS, color_map
-from world_config import format_time_short, format_time_short, format_time
+from world_config import format_time_short, format_time_short, format_time, MessageKind
 
 
 class UIManager:
@@ -175,6 +175,9 @@ class UIManager:
         elif hasattr(pointer, "cid"):
             print(f"[ui] pointer comm -> {pointer.cid}")
             self.view_comm(pointer)
+        elif isinstance(pointer, MessageKind):
+            print(f"[ui] pointer item -> {pointer.name}")
+            self.select_message(pointer)
 
     def menu_scroll(self, menu:str, scroll:int):
         self.scroll[menu]=(self.scroll[menu]+scroll)
@@ -221,9 +224,14 @@ class UIManager:
             mapping: dict[tuple[str, int], str]
     ):
         gcs=0
-        for ui in UI.elements:
-            if ui.name.startswith(f"{menu}_grid_cell_") and not ui.name.startswith(f"{menu}_grid_cell_image_"):
-                gcs+=1
+        if menu=="convo":
+            for ui in UI.elements:
+                if ui.name.startswith(f"{menu}_r_grid_cell_") and not ui.name.startswith(f"{menu}_r_grid_cell_image_"):
+                    gcs+=1
+        else:
+            for ui in UI.elements:
+                if ui.name.startswith(f"{menu}_grid_cell_") and not ui.name.startswith(f"{menu}_grid_cell_image_"):
+                    gcs += 1
 
         view_start=self.scroll[menu]*gcs
         view_end=view_start+gcs
@@ -248,6 +256,8 @@ class UIManager:
             ui_up.function=None
 
         viewed_content = content[view_start:view_end]
+        if menu=="convo":
+            return
         for i in range(gcs):
             ui = self.ui_lookup(f"{menu}_grid_cell_{i + 1}")
 
@@ -268,7 +278,7 @@ class UIManager:
                 entry=viewed_content[i]
                 if target[0]=="text":
                     ui.text[target[1]].text=entry[content_key]
-                    ui.fill=COLORS[f"{color_map[menu]}_lo"]
+                    ui.fill=COLORS[f"{color_map[menu]}_lo"] if not ui.selected else COLORS[f"{color_map[menu]}_mid"]
                 elif target[0]=="image":
                     ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
                     ui_image.image[target[1]].png=entry[content_key]
@@ -374,6 +384,22 @@ class UIManager:
         else:
             self.convo_display()
 
+    def select_message(self, kind: MessageKind):
+        message_ui=self.ui_lookup(self.click_history[-1])
+        send_ui=self.ui_lookup("convo_text_send")
+        if self.click_history[-1].endswith("1"):
+            other_message_ui=self.ui_lookup(message_ui.name[0:-2]+"2")
+        else:
+            other_message_ui=self.ui_lookup(message_ui.name[0:-2]+"1")
+        if other_message_ui.selected:
+            other_message_ui.selected = False
+            message_ui.selected = True
+            send_ui.selected = True
+        else:
+            message_ui.selected = not message_ui.selected
+            send_ui.selected = message_ui.selected
+
+
     def comms_display(self):
         if self.click_history[-1] not in ("back_button", "comms_up", "comms_down"):
             self.scroll["comms"]=0
@@ -473,7 +499,11 @@ class UIManager:
         )
 
         game.comm_responses(comm)
-        responses=comm.responses
+        responses=[{
+            "text": response["text"],
+            "pointer": response["kind"],
+            "function": self.follow_pointer
+        } for response in comm.responses]
         self.fill_grid_menu(
             "convo_text",
             responses,

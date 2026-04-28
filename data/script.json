@@ -7,6 +7,13 @@
       "sender": "hai",
       "recipient": ""
     },
+    "GREETING_r:hai_1": {
+      "mid": "GREETING_r:hai_1",
+      "kind": "GREETING",
+      "text": "Hey hAI",
+      "sender": "",
+      "recipient": "hai"
+    },
 
     "TASK_ADD_r:hai_1": {
       "mid": "TASK_ADD_r:hai_1",

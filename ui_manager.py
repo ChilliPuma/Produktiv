@@ -387,17 +387,17 @@ class UIManager:
     def select_message(self, kind: MessageKind):
         message_ui=self.ui_lookup(self.click_history[-1])
         send_ui=self.ui_lookup("convo_text_send")
-        if self.click_history[-1].endswith("1"):
-            other_message_ui=self.ui_lookup(message_ui.name[0:-2]+"2")
+        if message_ui.name.endswith("1"):
+            other_message_ui=self.ui_lookup(message_ui.name.rsplit("_", 1)[0]+"_2")
         else:
-            other_message_ui=self.ui_lookup(message_ui.name[0:-2]+"1")
+            other_message_ui=self.ui_lookup(message_ui.name.rsplit("_", 1)[0]+"_1")
         if other_message_ui.selected:
-            other_message_ui.selected = False
-            message_ui.selected = True
-            send_ui.selected = True
-        else:
-            message_ui.selected = not message_ui.selected
-            send_ui.selected = message_ui.selected
+            other_message_ui.selected=False
+            message_ui.selected=True
+            return
+        message_ui.selected=not message_ui.selected
+        send_ui.selected=message_ui.selected
+        self.convo_display()
 
 
     def comms_display(self):

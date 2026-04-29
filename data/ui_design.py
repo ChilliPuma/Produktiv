@@ -951,7 +951,7 @@ ui_convo_down = UI(
 )
 
 ui_convo_send = UI(
-    name = "convo_send",
+    name = "convo_text_send",
     pos = (ui_convo_down.pos[0] + ui_convo_down.size[0], ui_convo_down.pos[1]),
     size = convo_send_size,
     fill = COLORS["blue_lo"],

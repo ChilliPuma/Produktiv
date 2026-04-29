@@ -1,13 +1,12 @@
-import json
 from collections import deque
 
 import pygame
 
 from game import game
 from loader import saves_dir
-from data.ui_components import UI, Text, unify
-from data.visual_design import COLORS, FONTS, color_map
-from world_config import format_time_short, format_time_short, format_time, MessageKind
+from data.ui_components import UI, unify
+from data.visual_design import COLORS, color_map
+from world_config import format_time_short, format_time, MessageKind
 
 
 class UIManager:
@@ -27,9 +26,7 @@ class UIManager:
     item_cont_scroll = 0
 
     viewed_comm = None
-    cmms_scroll = 0
-    conv_scroll = 0
-    conv_txt_scroll = 0
+    selected_message=None
     scroll={
         "facilities_inventory": 0,
         "item_contents": 0,
@@ -177,7 +174,7 @@ class UIManager:
             self.view_comm(pointer)
         elif isinstance(pointer, MessageKind):
             print(f"[ui] pointer item -> {pointer.name}")
-            self.select_message(pointer)
+            self.send_message
 
     def menu_scroll(self, menu:str, scroll:int):
         self.scroll[menu]=(self.scroll[menu]+scroll)
@@ -278,7 +275,7 @@ class UIManager:
                 entry=viewed_content[i]
                 if target[0]=="text":
                     ui.text[target[1]].text=entry[content_key]
-                    ui.fill=COLORS[f"{color_map[menu]}_lo"] if not ui.selected else COLORS[f"{color_map[menu]}_mid"]
+                    ui.fill=COLORS[f"{color_map[menu]}_lo"]
                 elif target[0]=="image":
                     ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
                     ui_image.image[target[1]].png=entry[content_key]
@@ -290,7 +287,9 @@ class UIManager:
                     ui.function=None
                     continue
                 if "pointer" not in entry:
-                    raise ValueError(f"Function defined without pointer for {ui.name}")
+                    print(f"no pointer for gc{i+1} of {menu}")
+                    ui.function=entry["function"]
+                    continue
                 function, pointer=entry["function"], entry["pointer"]
                 ui.pointer=pointer
                 ui.function=lambda f=function, p=pointer: f(p)
@@ -374,17 +373,17 @@ class UIManager:
 
         self.menu_refresh()
 
-    def view_comm(self, comm):
-        self.viewed_comm = comm
+    def view_comm(self, cid):
+        self.viewed_comm=game.world.comms[cid]
         self.conv_scroll = 0
         self.conv_txt_scroll = 0
-        print(f"[ui] view comm -> {comm.cid}")
+        print(f"[ui] view comm -> {cid}")
         if not self.menu_history or self.menu_history[-1] != "convo":
             self.menu_switch("convo")
         else:
             self.convo_display()
 
-    def select_message(self, kind: MessageKind):
+    def select_message(self):
         message_ui=self.ui_lookup(self.click_history[-1])
         send_ui=self.ui_lookup("convo_text_send")
         if message_ui.name.endswith("1"):
@@ -392,12 +391,20 @@ class UIManager:
         else:
             other_message_ui=self.ui_lookup(message_ui.name.rsplit("_", 1)[0]+"_1")
         if other_message_ui.selected:
-            other_message_ui.selected=False
-            message_ui.selected=True
-            return
-        message_ui.selected=not message_ui.selected
-        send_ui.selected=message_ui.selected
+            other_message_ui.selected=not other_message_ui.selected
+            message_ui.selected=not message_ui.selected
+        else:
+            message_ui.selected=not message_ui.selected
+            send_ui.selected=message_ui.selected
+        self.selected_message=message_ui if message_ui.selected else None
         self.convo_display()
+
+    def send_message(self, kind: MessageKind):
+        text=self.selected_message.text[0]
+        game.comm_send(self.viewed_comm, {
+            "kind": kind,
+            "text": text,
+        })
 
 
     def comms_display(self):
@@ -415,7 +422,7 @@ class UIManager:
                 format_time_short(comm.history[0]["timestamp"])
                 if comm.history else ""
             ),
-            "pointer": comm,
+            "pointer": comm.cid,
             "function": self.follow_pointer
         } for comm in game.world.comms.values()]
 
@@ -502,7 +509,7 @@ class UIManager:
         responses=[{
             "text": response["text"],
             "pointer": response["kind"],
-            "function": self.follow_pointer
+            "function": self.select_message
         } for response in comm.responses]
         self.fill_grid_menu(
             "convo_text",
@@ -511,6 +518,15 @@ class UIManager:
                 ("text", 0): "text"
             }
         )
+        text_send=self.ui_lookup("convo_text_send")
+        color=color_map["convo_text"]
+        if self.selected_message:
+            self.selected_message.fill=COLORS[f"{color}_mid"]
+            text_send.fill, text_send.text[0].color=COLORS[f"{color}_mid"], COLORS["white"]
+            text_send.pointer, text_send.function= self.selected_message.pointer, self.follow_pointer
+        else:
+            text_send.fill, text_send.text[0].color = COLORS[f"{color}_lo"], COLORS["black"]
+            text_send.pointer, text_send.function = None, None
 
         self.menu_refresh()
 

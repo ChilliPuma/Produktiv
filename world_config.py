@@ -290,8 +290,8 @@ class Comm:
     def __init__(self,
         cid: str,
         kind: CommKind,
-        sender: str, #pid
-        recipient: str, #pid
+        sender: Person,
+        recipient: Person,
         history: list[dict] = None, #message dict, received, timestamp
         transcript: list[dict] = None, #message text, side, timestamp
         responses: list[dict] = None,

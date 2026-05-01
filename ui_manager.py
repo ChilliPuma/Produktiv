@@ -6,7 +6,7 @@ from game import game
 from loader import saves_dir
 from data.ui_components import UI, unify
 from data.visual_design import COLORS, color_map
-from world_config import format_time_short, format_time, MessageKind
+from world_config import format_time_short, format_time, MessageKind, Comm
 
 
 class UIManager:
@@ -174,7 +174,7 @@ class UIManager:
             self.view_comm(pointer)
         elif isinstance(pointer, MessageKind):
             print(f"[ui] pointer item -> {pointer.name}")
-            self.send_message
+            self.send_message(pointer)
 
     def menu_scroll(self, menu:str, scroll:int):
         self.scroll[menu]=(self.scroll[menu]+scroll)
@@ -373,17 +373,17 @@ class UIManager:
 
         self.menu_refresh()
 
-    def view_comm(self, cid):
-        self.viewed_comm=game.world.comms[cid]
+    def view_comm(self, comm: Comm):
+        self.viewed_comm=comm
         self.conv_scroll = 0
         self.conv_txt_scroll = 0
-        print(f"[ui] view comm -> {cid}")
+        print(f"[ui] view comm -> {comm.cid}")
         if not self.menu_history or self.menu_history[-1] != "convo":
             self.menu_switch("convo")
         else:
             self.convo_display()
 
-    def select_message(self):
+    def select_message(self, kind):
         message_ui=self.ui_lookup(self.click_history[-1])
         send_ui=self.ui_lookup("convo_text_send")
         if message_ui.name.endswith("1"):
@@ -422,13 +422,13 @@ class UIManager:
                 format_time_short(comm.history[0]["timestamp"])
                 if comm.history else ""
             ),
-            "pointer": comm.cid,
+            "pointer": comm,
             "function": self.follow_pointer
         } for comm in game.world.comms.values()]
 
         contacts.sort(
             key=lambda c: (
-                c["pointer"].cid != "hai",
+                c["contact_image"]!="hai",
                 -c["pointer"].history[0]["timestamp"] if c["pointer"].history else 0
             )
         )

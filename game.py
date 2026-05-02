@@ -80,10 +80,20 @@ class Game:
     def format_message(self, message: dict, comm: Comm, received: bool):
         text=message["text"]
 
+        sender_name=comm.sender.name if not received else comm.recipient.name
+        recipient_name=comm.recipient.name if not received else comm.sender.name
         if "{sender_name}" in text:
-            text=text.replace("{sender_name}", comm.sender.name if not received else comm.recipient.name)
+            text=text.replace("{sender_name}", sender_name)
+        if "{sender_first_name}" in text:
+            text=text.replace("{sender_first_name}", sender_name.split()[0])
+        if "{sender_last_name}" in text:
+            text=text.replace("{sender_last_name}", sender_name.split()[1])
         if "{recipient_name}" in text:
-            text=text.replace("{recipient_name}", comm.recipient.name if not received else comm.sender.name)
+            text=text.replace("{recipient_name}", recipient_name)
+        if "{recipient_first_name}" in text:
+            text=text.replace("{recipient_first_name}", recipient_name.split()[0])
+        if "{recipient_last_name}" in text:
+            text=text.replace("{recipient_last_name}", recipient_name.split()[1])
 
         message["text"]=text
         return message

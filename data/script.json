@@ -2,13 +2,22 @@
   "messages": {
     "GREETING": [
       {
-        "text": "Hello"
+        "text": "Hello",
+        "tone": "CASUAL"
       },
       {
-        "text": "Hello {recipient_name}"
+        "text": "Hello {recipient_first_name}"
       },
       {
-        "text": "Greetings {recipient_name}, how may I assist you today?",
+        "text": "Greetings {recipient_first_name}, how may I assist you today?",
+        "sender": "hai"
+      },
+      {
+        "text": "Hello {recipient_first_name}, how can I help?",
+        "sender": "hai"
+      },
+      {
+        "text": "Hello, I am hAI. How may I assist you today?",
         "sender": "hai"
       },
       {

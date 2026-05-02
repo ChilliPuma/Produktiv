@@ -404,6 +404,8 @@ class UIManager:
             "text": text,
         })
         self.selected_message=None
+        self.scroll["convo"]=0
+        self.scroll["convo_text"]=0
 
 
     def comms_display(self):
@@ -452,8 +454,8 @@ class UIManager:
         self.ui_lookup("convo_header").text[0].text = comm.recipient.name
 
         gcs=4
-        start=gcs*self.conv_scroll
-        end=gcs+gcs*self.conv_scroll
+        start=gcs*self.scroll["convo"]
+        end=gcs+gcs*self.scroll["convo"]
         texts=comm.transcript[start:end]
         filled=0
 

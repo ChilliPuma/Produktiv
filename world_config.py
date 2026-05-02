@@ -26,9 +26,15 @@ class Faction(Enum):
 
 class MessageKind(Enum):
     ERROR = auto()
+    CANCEL = auto()
 
     GREETING = auto()
-    ACKNOWLEDGEMENT = auto()
+    ACKNOWLEDGE = auto()
+    THANKS=auto()
+    WELCOME=auto()
+
+    ADVICE_ASK=auto()
+    ADVICE_GIVE=auto()
 
     STATUS = auto()
     PROBLEM = auto()
@@ -40,12 +46,6 @@ class MessageKind(Enum):
 
     TASK_RECON = auto()
     TASK_PRODUCE = auto()
-
-    TASK_TIME_ASAP = auto()
-    TASK_TIME_0600 = auto()
-    TASK_TIME_1200 = auto()
-    TASK_TIME_1800 = auto()
-    TASK_TIME_0000 = auto()
 
 class Nation(Enum):
     NONE = auto()

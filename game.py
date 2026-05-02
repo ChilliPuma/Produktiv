@@ -2,6 +2,7 @@ import copy
 import random
 import uuid
 from functools import partial
+from multiprocessing.reduction import ACKNOWLEDGE
 
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
@@ -18,9 +19,21 @@ class Game:
     def comm_react(self, comm: Comm, kind: MessageKind):
         kind_chosen="ERROR"
 
-        if comm.kind==CommKind.HAI:
+        if comm.kind.name=="HAI":
+            if kind.name=="GREETING":
+                kind_chosen="GREETING"
+            if kind.name=="THANKS":
+                kind_chosen="WELCOME"
+
             if kind.name=="TASK_ADD":
                 kind_chosen="TASK_REQUEST"
+
+            if kind.name=="ADVICE_ASK":
+                kind_chosen="ADVICE_GIVE"
+
+            if kind.name=="CANCEL":
+                kind_chosen="ACKNOWLEDGE"
+
 
 
         kind_chosen=MessageKind[kind_chosen]
@@ -32,11 +45,23 @@ class Game:
         if comm.kind==CommKind.HAI:
             if comm.history:
                 if comm.history[0]["received"]: #if last was received
-                    last=comm.history[0]["message"]
-                    if last["kind"].name=="GREETING":
+                    last=comm.history[0]["message"]["kind"].name
+                    if last in ["GREETING", "WELCOME", "ACKNOWLEDGE"]:
                         kinds.extend([
                             "GREETING",
+                            "ADVICE_ASK",
                             "TASK_ADD"
+                        ])
+                    if last=="ADVICE_GIVE":
+                        kinds.extend([
+                            "THANKS",
+                            "CANCEL"
+                        ])
+                    if last=="TASK_REQUEST":
+                        kinds.extend([
+                            "TASK_RECON",
+                            "TASK_PRODUCE",
+                            "CANCEL"
                         ])
 
         kinds = list(set(kinds))
@@ -79,6 +104,7 @@ class Game:
 
     def format_message(self, message: dict, comm: Comm, received: bool):
         text=message["text"]
+        kind=message["kind"]
 
         sender_name=comm.sender.name if not received else comm.recipient.name
         recipient_name=comm.recipient.name if not received else comm.sender.name
@@ -100,7 +126,12 @@ class Game:
 
 
 
-    def build_message(self, comm:Comm, kind: MessageKind, received: bool) -> dict:
+    def build_message(
+            self,
+            comm:Comm,
+            kind: MessageKind,
+            received: bool
+    ) -> dict:
         templates=self.script["messages"].get(kind, [])
         candidates=[]
         message_sender=comm.sender if not received else comm.recipient

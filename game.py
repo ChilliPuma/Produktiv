@@ -23,23 +23,8 @@ class Game:
                 kind_chosen="TASK_REQUEST"
 
 
-        kind_chosen=MessageKind(kind_chosen)
+        kind_chosen=MessageKind[kind_chosen]
         self.comm_receive(comm, kind_chosen, self.world.time)
-
-    def comm_send(self, comm:Comm, message:dict):
-        timestamp = self.world.time
-
-        comm.history.insert(
-            0, {"message": message, "received": False, "timestamp": timestamp}
-        )
-        comm.transcribe(message, True, timestamp)
-
-        print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
-
-        self.world.processes.append((
-            partial(self.comm_react, comm, message["kind"]),
-            comm.ping
-        ))
 
     def comm_responses(self, comm:Comm):
         kinds = []
@@ -57,47 +42,74 @@ class Game:
         kinds = list(set(kinds))
         candidates=[]
         for kind in kinds:
-            chosen=self.best_message(comm, MessageKind[kind], False)
+            chosen=self.build_message(comm, MessageKind[kind], False)
             candidates.append(chosen)
         print(f"[game] {comm.cid} responses updated")
         comm.responses=candidates
 
+    def comm_send(self, comm:Comm, message:dict):
+        timestamp = self.world.time
+
+        comm.history.insert(
+            0, {"message": message, "received": False, "timestamp": timestamp}
+        )
+        comm.transcribe(message, False, timestamp)
+
+        print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
+
+        self.world.processes.append((
+            partial(self.comm_react, comm, message["kind"]),
+            comm.ping
+        ))
+        game.comm_responses(comm)
+        comm.new_message=True
+
     def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
 
-        chosen = self.best_message(comm, kind, True)
+        chosen=self.build_message(comm, kind, True)
 
         comm.history.insert(
             0, {"message": chosen, "received": True, "timestamp": timestamp}
         )
         comm.transcribe(chosen, True, timestamp)
+        game.comm_responses(comm)
         comm.new_message = True
         print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")
 
-    def best_message(self, comm:Comm, kind: MessageKind, received: bool) -> dict:
+
+    def format_message(self, message: dict, comm: Comm, received: bool):
+        text=message["text"]
+
+        if "{sender_name}" in text:
+            text=text.replace("{sender_name}", comm.sender.name if not received else comm.recipient.name)
+        if "{recipient_name}" in text:
+            text=text.replace("{recipient_name}", comm.recipient.name if not received else comm.sender.name)
+
+        message["text"]=text
+        return message
+
+
+
+    def build_message(self, comm:Comm, kind: MessageKind, received: bool) -> dict:
+        templates=self.script["messages"].get(kind, [])
         candidates=[]
-        for message in self.script["messages"].values():
-            points = 0
-            if message["kind"]!=kind:
-                continue
+        message_sender=comm.sender if not received else comm.recipient
+        message_recipient=comm.recipient if not received else comm.sender
+
+        for message in templates:
+            points=0
             sender, recipient=message["sender"], message["recipient"]
             if sender:
-                if received:
-                    if sender!=comm.recipient:
-                        continue
-                else:
-                    if not received:
-                        if sender!=comm.sender:
-                            continue
+                if sender!=message_sender:
+                    continue
                 points+=1
             if recipient:
-                if received:
-                    if recipient!=comm.sender:
-                        continue
-                else:
-                    if not received:
-                        if recipient!=comm.recipient:
-                            continue
+                if recipient!=message_recipient:
+                    continue
                 points+=1
+
+
+
             candidates.append((message, points))
         candidates.sort(key=lambda x: x[1], reverse=True)
         candidates=candidates[:3]
@@ -107,6 +119,9 @@ class Game:
             "text": kind.name,
             "kind": kind
         }
+
+        chosen=self.format_message(chosen, comm, received)
+
         return chosen
 
     def process_check(self, dt: float):
@@ -279,16 +294,17 @@ class Game:
                     world.people[pid] for pid in facility["areas"][area.aid]["staff"]
                 ]
 
-        new_messages = {}
-        for message in self.script["messages"].values():
-            new_messages[message["mid"]] = {
-                "mid": message["mid"],
-                "kind": MessageKind[message["kind"]],
-                "text": message["text"],
-                "sender": world.people[message["sender"]] if message["sender"] else None,
-                "recipient": world.people[message["recipient"]] if message["recipient"] else None
-            }
-        self.script["messages"] = new_messages
+        new_messages={}
+        for kind, messages in self.script["messages"].items():
+            new_messages[MessageKind[kind]]=[
+                {
+                    "kind": MessageKind[kind],
+                    "text": message["text"],
+                    "sender": world.people[message["sender"]] if message.get("sender") else None,
+                    "recipient": world.people[message["recipient"]] if message.get("recipient") else None
+                } for message in messages
+            ]
+        self.script["messages"]=new_messages
 
         for comm in data["comms"].values():
             world.comms[comm["cid"]]=Comm(
@@ -306,7 +322,7 @@ class Game:
                 ping=comm["ping"]
             )
             for message in comm["history"]:
-                world.comms["cid"].transcribe(
+                world.comms[comm["cid"]].transcribe(
                     message["message"], message["received"], message["timestamp"]
                 )
 

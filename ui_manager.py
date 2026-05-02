@@ -165,7 +165,6 @@ class UIManager:
     def follow_pointer(self, pointer):
         if pointer is None:
             return
-
         if hasattr(pointer, "oid"):
             print(f"[ui] pointer item -> {pointer.oid}")
             self.view_item(pointer)
@@ -267,9 +266,8 @@ class UIManager:
                         ui_image=self.ui_lookup(f"{menu}_grid_cell_image_{i + 1}")
                         ui_image.image[target[1]].png = ""
                         ui_image.fill=COLORS["transparent"]
-                    elif target[0]=="function":
-                        ui.function=None
-                        ui.pointer=None
+                    ui.function = None
+                    ui.pointer = None
                     continue
 
                 entry=viewed_content[i]
@@ -288,7 +286,7 @@ class UIManager:
                     continue
                 if "pointer" not in entry:
                     print(f"no pointer for gc{i+1} of {menu}")
-                    ui.function=entry["function"]
+                    ui.function= entry["function"]
                     continue
                 function, pointer=entry["function"], entry["pointer"]
                 ui.pointer=pointer
@@ -400,11 +398,12 @@ class UIManager:
         self.convo_display()
 
     def send_message(self, kind: MessageKind):
-        text=self.selected_message.text[0]
+        text=self.selected_message.text[0].text
         game.comm_send(self.viewed_comm, {
             "kind": kind,
             "text": text,
         })
+        self.selected_message=None
 
 
     def comms_display(self):
@@ -505,7 +504,6 @@ class UIManager:
             {}
         )
 
-        game.comm_responses(comm)
         responses=[{
             "text": response["text"],
             "pointer": response["kind"],
@@ -523,7 +521,7 @@ class UIManager:
         if self.selected_message:
             self.selected_message.fill=COLORS[f"{color}_mid"]
             text_send.fill, text_send.text[0].color=COLORS[f"{color}_mid"], COLORS["white"]
-            text_send.pointer, text_send.function= self.selected_message.pointer, self.follow_pointer
+            text_send.function=lambda: self.follow_pointer(self.selected_message.pointer)
         else:
             text_send.fill, text_send.text[0].color = COLORS[f"{color}_lo"], COLORS["black"]
             text_send.pointer, text_send.function = None, None

@@ -1024,8 +1024,9 @@ ui_convo_text_up = UI(
 )
 
 
-pfp_icon_size = (ui_convo_up.pos[1] - frame_hi_h - ui_convo_header.size[1] - frame_border) // 4
-c_g_c_size = (frame_mid_rect[2] - pfp_icon_size, pfp_icon_size)
+pfp_icon_size=(ui_convo_up.pos[1] - frame_hi_h - ui_convo_header.size[1] - frame_border) // 4
+pfp_image_scale=icon_scale/1.4
+c_g_c_size=(frame_mid_rect[2] - pfp_icon_size, pfp_icon_size)
 
 for i in range(4):
     globals()[f"ui_convo_l_grid_cell_{i+1}"] = UI(
@@ -1058,15 +1059,15 @@ for i in range(4):
     )
     grid_cell_pos = ui_manager.ui_lookup(f"convo_l_grid_cell_{i+1}").pos
     globals()[f"ui_convo_l_grid_cell_image_{i+1}"] = UI(
-        name = f"convo_l_grid_cell_image_{i+1}",
-        pos = (grid_cell_pos[0] - pfp_icon_size, grid_cell_pos[1]),
-        size = (pfp_icon_size, pfp_icon_size),
-        fill = COLORS["cyan_dead"],
-        layer = 0,
-        image = [
+        name=f"convo_l_grid_cell_image_{i+1}",
+        pos=(grid_cell_pos[0] - pfp_icon_size, grid_cell_pos[1]),
+        size=(pfp_icon_size, pfp_icon_size),
+        fill=COLORS["cyan_dead"],
+        layer=0,
+        image=[
             Image(
-                png = "",
-                scale = icon_scale // 2
+                png="",
+                scale=pfp_image_scale
             )
         ]
     )
@@ -1099,20 +1100,20 @@ for i in range(4):
         ]
     )
     globals()[f"ui_convo_r_grid_cell_image_{i+1}"] = UI(
-        name = f"convo_r_grid_cell_image_{i+1}",
-        pos = (frame_mid_rect[2] - pfp_icon_size, grid_cell_pos[1]),
-        size = (pfp_icon_size, pfp_icon_size),
-        fill = COLORS["orange_dead"],
-        layer = 1 ,
-        image = [
+        name=f"convo_r_grid_cell_image_{i+1}",
+        pos=(frame_mid_rect[2] - pfp_icon_size, grid_cell_pos[1]),
+        size=(pfp_icon_size, pfp_icon_size),
+        fill=COLORS["orange_dead"],
+        layer=1 ,
+        image=[
             Image(
-                png = "",
-                scale = icon_scale // 2
+                png="",
+                scale=pfp_image_scale
             )
         ]
     )
 
-c_t_g_c_size = (frame_mid_rect[2] - scroll_button_y - frame_border * 2,
+c_t_g_c_size=(frame_mid_rect[2] - scroll_button_y - frame_border * 2,
                 (convo_texting_h - frame_border * 2) // 2)
 
 for i in range(2):

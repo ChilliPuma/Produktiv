@@ -2,7 +2,7 @@
   "messages": {
     "GREETING": [
       {
-        "text": "Hello",
+        "text": "Hey",
         "tone": "CASUAL"
       },
       {
@@ -27,12 +27,77 @@
 
     ],
 
+    "CANCEL": [
+      {
+        "text": "Never mind."
+      }
+    ],
+    "THANKS": [
+      {
+        "text": "Thank you."
+      },
+      {
+        "text": "Thanks"
+      }
+    ],
+    "WELCOME": [
+      {
+        "text": "You're welcome."
+      },
+      {
+        "text": "It's my directive",
+        "sender": "hai"
+      }
+    ],
+    "ACKNOWLEDGE": [
+      {
+        "text": "Alright"
+      },
+      {
+        "text": "Understood.",
+        "sender": "hai"
+      }
+    ],
+
+    "ADVICE_ASK": [
+      {
+        "text": "Do you have any advice for me?"
+      },
+      {
+        "text": "Give me some advice",
+        "recipient": "hai"
+      }
+    ],
+    "ADVICE_MORE": [
+      {
+        "text": "May I ask you for more advice?"
+      },
+      {
+        "text": "More advice",
+        "recipient": "hai"
+      }
+    ],
+    "ADVICE_GIVE": [
+      {
+        "text": "It's always wise to do some recon of your surroundings. You may find unexpected assets",
+        "sender": "hai"
+      },
+      {
+        "text": "Ask me to set up tasks for you, and you can start being productive.",
+        "sender": "hai",
+        "states": {
+          "total_staff": 1
+        }
+      }
+    ],
+
     "TASK_ADD": [
       {
         "text": "Set up a new task for me.",
         "recipient": "hai"
       }
     ]
+
 
   }
 }

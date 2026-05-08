@@ -25,12 +25,16 @@ class Game:
                 response = self.build_message(
                     comm, Intent.GREETING, {}, True
                 )
-            elif intent in ["CANCEL", "THANKS"]:
+            elif intent in ["CANCEL"]:
                 response = self.build_message(
                     comm, Intent.ACKNOWLEDGE, {}, True
                 )
+            elif intent in ["THANKS"]:
+                response = self.build_message(
+                    comm, Intent.WELCOME, {}, True
+                )
 
-            elif intent == "ADVICE_ASK":
+            elif intent in ["ADVICE_ASK", "ADVICE_MORE"]:
                 response = self.build_message(
                     comm, Intent.ADVICE_GIVE, {}, True
                 )
@@ -70,6 +74,16 @@ class Game:
                                 comm, Intent.TASK_ADD, {}, False
                             )
                         ]
+                    elif last == "ADVICE_GIVE":
+                        messages = [
+                            self.build_message(
+                                comm, Intent.THANKS, {}, False
+                            ),
+                            self.build_message(
+                                comm, Intent.ADVICE_MORE, {}, False
+                            )
+                        ]
+
                     elif last == "TASK_REQUEST":
                         messages = [
                             self.build_message(
@@ -248,11 +262,11 @@ class Game:
 
         #new game design:
 
-        shed = self.world.facilities["shed_backyard"]
+        shed = self.world.facilities["abode_small"]
         shed_int, shed_ext = shed.areas["interior"], shed.areas["exterior"]
         main_table = self.create("table_wood", 1)
         for i in range (4):
-            self.object_in_object(main_table, self.create("plank_wood", 1))
+            self.object_in_object(main_table, self.create("plank_4x16_wood", 1))
         self.object_in_area(shed_int, main_table)
         print("[game] new game setup complete")
 

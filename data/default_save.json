@@ -1,10 +1,10 @@
 {
   "objects": {
 
-    "plank_wood": {
-      "oid": "plank_wood",
-      "name": "Wood plank",
-      "description": "A thick rectangular plank of wood. The first step in carpentry",
+    "plank_4x16_wood": {
+      "oid": "plank_4x16_wood",
+      "name": "4x16 plank",
+      "description": "A thick rectangular plank of wood. A first step in carpentry",
       "weight": 5.0,
       "volume": 5.0,
       "area": 0.05,
@@ -69,9 +69,9 @@
 
   "facilities": {
 
-    "shed_backyard": {
-      "fid": "shed_backyard",
-      "name": "Backyard shed",
+    "abode_small": {
+      "fid": "abode_small",
+      "name": "Smalle Abode",
       "location": [[0, 0],"Tiffin - Ohio, USA"],
       "owner": "smith_guy",
       "areas": {
@@ -92,11 +92,11 @@
           "level": 0,
           "area": 110.0,
           "staff": [],
-          "staff_max": 30,
+          "staff_max": 12,
           "inventory": []
         }
       },
-      "power": 2000.0
+      "power": 0.0
     }
   },
 
@@ -105,10 +105,10 @@
     "smith_guy": {
       "pid": "smith_guy",
       "name": "Guy Smith",
-      "title": "Dropout Engineer",
+      "title": "Polymath",
       "age": 28,
       "sex": "MALE",
-      "facility": "shed_backyard",
+      "facility": "abode_small",
       "area": "interior",
       "nation": "AMERICAN_WHITE",
       "faction": "INDEPENDENT",

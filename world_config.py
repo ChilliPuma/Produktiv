@@ -35,6 +35,7 @@ class Intent(Enum):
 
     ADVICE_ASK = auto()
     ADVICE_GIVE = auto()
+    ADVICE_MORE = auto()
 
     STATUS = auto()
     PROBLEM = auto()
@@ -104,6 +105,7 @@ def text_lines(text:str, char:int):
                 line += " "
             line += word
         else:
+            lines.append(line)
             line = word
 
     if line:

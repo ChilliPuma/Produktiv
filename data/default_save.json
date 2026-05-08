@@ -146,6 +146,7 @@
       "kind": "HAI",
       "sender": "smith_guy",
       "recipient": "hai",
+      "trust": 5.0,
       "history": [
       ],
       "transcript": [
@@ -165,6 +166,7 @@
   },
 
   "stories": {
+
     "hai_intro" : {
       "state": "untriggered",
       "trigger": {
@@ -178,7 +180,8 @@
       "on_trigger": {
         "message": {
           "cid": "hai",
-          "kind": "GREETING"
+          "intent": "GREETING",
+          "incoming": true
         }
       }
     }

@@ -3,10 +3,9 @@ from collections import deque
 import pygame
 
 from game import game
-from loader import saves_dir
 from data.ui_components import UI, unify
 from data.visual_design import COLORS, color_map
-from world_config import format_time_short, format_time, MessageKind, Comm
+from world_config import format_time_short, format_time, Comm, Message
 
 
 class UIManager:
@@ -171,8 +170,8 @@ class UIManager:
         elif hasattr(pointer, "cid"):
             print(f"[ui] pointer comm -> {pointer.cid}")
             self.view_comm(pointer)
-        elif isinstance(pointer, MessageKind):
-            print(f"[ui] pointer item -> {pointer.name}")
+        elif isinstance(pointer, Message):
+            print(f"[ui] pointer item -> {pointer.intent.name}")
             self.send_message(pointer)
 
     def menu_scroll(self, menu:str, scroll:int):
@@ -251,9 +250,10 @@ class UIManager:
             ui_up.text[0].color = COLORS["black"]
             ui_up.function=None
 
-        viewed_content = content[view_start:view_end]
         if menu=="convo":
             return
+
+        viewed_content = content[view_start:view_end]
         for i in range(gcs):
             ui = self.ui_lookup(f"{menu}_grid_cell_{i + 1}")
 
@@ -397,12 +397,8 @@ class UIManager:
         self.selected_message=message_ui if message_ui.selected else None
         self.convo_display()
 
-    def send_message(self, kind: MessageKind):
-        text=self.selected_message.text[0].text
-        game.comm_send(self.viewed_comm, {
-            "kind": kind,
-            "text": text,
-        })
+    def send_message(self, message: Message):
+        game.comm_send(message.comm, message)
         self.selected_message=None
         self.scroll["convo"]=0
         self.scroll["convo_text"]=0
@@ -417,10 +413,10 @@ class UIManager:
             "contact_title": comm.recipient.title,
             "contact_image": comm.recipient.pid,
             "comm_last_text": (
-                (comm.history[0]["message"]["text"] if comm.history else "")[:91]
+                (comm.history[0].text if comm.history else "")[:91]
             ),
             "comm_last_time": (
-                format_time_short(comm.history[0]["timestamp"])
+                format_time_short(comm.history[0].timestamp)
                 if comm.history else ""
             ),
             "pointer": comm,
@@ -430,7 +426,7 @@ class UIManager:
         contacts.sort(
             key=lambda c: (
                 c["contact_image"]!="hai",
-                -c["pointer"].history[0]["timestamp"] if c["pointer"].history else 0
+                -c["pointer"].history[0].timestamp if c["pointer"].history else 0
             )
         )
 
@@ -449,23 +445,23 @@ class UIManager:
         self.menu_refresh()
 
     def convo_display(self):
-        comm=self.viewed_comm
+        comm = self.viewed_comm
 
         self.ui_lookup("convo_header").text[0].text = comm.recipient.name
 
-        gcs=4
-        start=gcs*self.scroll["convo"]
-        end=gcs+gcs*self.scroll["convo"]
-        texts=comm.transcript[start:end]
-        filled=0
+        gcs = 4
+        start = gcs*self.scroll["convo"]
+        end = gcs + gcs*self.scroll["convo"]
+        entries = comm.transcript[start:end]
+        filled = 0
 
-        while filled<gcs:
-            gc_l=self.ui_lookup(f"convo_l_grid_cell_{gcs-filled}")
-            gc_l_pfp=self.ui_lookup(f"convo_l_grid_cell_image_{gcs-filled}")
-            gc_r=self.ui_lookup(f"convo_r_grid_cell_{gcs-filled}")
-            gc_r_pfp=self.ui_lookup(f"convo_r_grid_cell_image_{gcs-filled}")
+        while filled < gcs:
+            gc_l = self.ui_lookup(f"convo_l_grid_cell_{gcs-filled}")
+            gc_l_pfp = self.ui_lookup(f"convo_l_grid_cell_image_{gcs-filled}")
+            gc_r = self.ui_lookup(f"convo_r_grid_cell_{gcs-filled}")
+            gc_r_pfp = self.ui_lookup(f"convo_r_grid_cell_image_{gcs-filled}")
 
-            if filled >= len(texts):
+            if filled >= len(entries):
                 gc_l.text[0].text, gc_l.text[1].text, gc_l.fill = "", "", COLORS["transparent"]
                 gc_l_pfp.image[0].png, gc_l_pfp.fill = "", COLORS["transparent"]
                 gc_r.text[0].text, gc_r.text[1].text, gc_r.fill = "", "", COLORS["transparent"]
@@ -473,42 +469,40 @@ class UIManager:
                 filled += 1
                 continue
 
-            entry=texts[filled]
-            text=entry["text"]
-            side=entry["side"]
-            timestamp=entry["timestamp"]
+            entry=entries[filled]
+            text=entry[0]
+            incoming=entry[1].incoming
+            timestamp=entry[1].timestamp
 
-            if side=="right":
+            if not incoming:
                 gc_l.text[0].text, gc_l.text[1].text, gc_l.fill="", "", COLORS["transparent"]
                 gc_l_pfp.image[0].png, gc_l_pfp.fill="", COLORS["transparent"]
                 gc_r.text[0].text=text
                 gc_r.text[1].text=format_time_short(timestamp) if timestamp is not None else ""
                 gc_r.fill=COLORS["orange_lo"]
                 gc_r_pfp.image[0].png, gc_r_pfp.fill=comm.sender.pid, COLORS["transparent"]
-            elif side=="left":
+            elif incoming:
                 gc_l.text[0].text=text
                 gc_l.text[1].text=format_time_short(timestamp) if timestamp is not None else ""
                 gc_l.fill=COLORS["cyan_lo"]
                 gc_l_pfp.image[0].png, gc_l_pfp.fill=comm.recipient.pid, COLORS["transparent"]
                 gc_r.text[0].text, gc_r.text[1].text, gc_r.fill="", "", COLORS["transparent"]
                 gc_r_pfp.image[0].png, gc_r_pfp.fill="", COLORS["transparent"]
-            else:
-                gc_l.text[0].text, gc_l.text[1].text, gc_l.fill="", "", COLORS["transparent"]
-                gc_l_pfp.image[0].png, gc_l_pfp.fill="", COLORS["transparent"]
-                gc_r.text[0].text, gc_r.text[1].text, gc_r.fill="", "", COLORS["transparent"]
-                gc_r_pfp.image[0].png, gc_r_pfp.fill="", COLORS["transparent"]
 
             filled += 1
 
+        transcript_dict = [
+            {line[0]: line[0]} for line in comm.transcript
+        ]
         self.fill_grid_menu(
             "convo",
-            comm.transcript,
+            transcript_dict,
             {}
         )
 
         responses=[{
-            "text": response["text"],
-            "pointer": response["kind"],
+            "text": response.text,
+            "pointer": response,
             "function": self.select_message
         } for response in comm.responses]
         self.fill_grid_menu(
@@ -518,12 +512,12 @@ class UIManager:
                 ("text", 0): "text"
             }
         )
-        text_send=self.ui_lookup("convo_text_send")
-        color=color_map["convo_text"]
+        text_send = self.ui_lookup("convo_text_send")
+        color = color_map["convo_text"]
         if self.selected_message:
-            self.selected_message.fill=COLORS[f"{color}_mid"]
-            text_send.fill, text_send.text[0].color=COLORS[f"{color}_mid"], COLORS["white"]
-            text_send.function=lambda: self.follow_pointer(self.selected_message.pointer)
+            self.selected_message.fill = COLORS[f"{color}_mid"]
+            text_send.fill, text_send.text[0].color = COLORS[f"{color}_mid"], COLORS["white"]
+            text_send.function = lambda: self.follow_pointer(self.selected_message.pointer)
         else:
             text_send.fill, text_send.text[0].color = COLORS[f"{color}_lo"], COLORS["black"]
             text_send.pointer, text_send.function = None, None

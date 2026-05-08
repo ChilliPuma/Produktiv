@@ -2,11 +2,10 @@ import copy
 import random
 import uuid
 from functools import partial
-from multiprocessing.reduction import ACKNOWLEDGE
 
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind, MessageKind, format_time_short
+    Comm, CommKind, Intent, format_time_short, Message
 
 
 class Game:
@@ -16,152 +15,153 @@ class Game:
         self.plot={}
         print("[game] script loaded")
 
-    def comm_react(self, comm: Comm, kind: MessageKind):
-        kind_chosen="ERROR"
-
+    def comm_react(self, comm: Comm, message: Message):
+        response = self.build_message(
+            comm, Intent.NONE, {}, True
+        )
+        intent = message.intent.name
         if comm.kind.name=="HAI":
-            if kind.name=="GREETING":
-                kind_chosen="GREETING"
-            if kind.name=="THANKS":
-                kind_chosen="WELCOME"
+            if intent == "GREETING":
+                response = self.build_message(
+                    comm, Intent.GREETING, {}, True
+                )
+            elif intent in ["CANCEL", "THANKS"]:
+                response = self.build_message(
+                    comm, Intent.ACKNOWLEDGE, {}, True
+                )
 
-            if kind.name=="TASK_ADD":
-                kind_chosen="TASK_REQUEST"
+            elif intent == "ADVICE_ASK":
+                response = self.build_message(
+                    comm, Intent.ADVICE_GIVE, {}, True
+                )
 
-            if kind.name=="ADVICE_ASK":
-                kind_chosen="ADVICE_GIVE"
+            elif intent == "TASK_ADD":
+                response = self.build_message(
+                    comm, Intent.TASK_REQUEST, {}, True
+                )
+            elif intent == "TASK_RECON":
+                response = self.build_message(
+                    comm, Intent.ACKNOWLEDGE, {}, True
+                )
+            elif intent == "TASK_BUILD":
+                response = self.build_message(
+                    comm, Intent.ACKNOWLEDGE, {}, True
+                )
 
-            if kind.name=="CANCEL":
-                kind_chosen="ACKNOWLEDGE"
 
-
-
-        kind_chosen=MessageKind[kind_chosen]
-        self.comm_receive(comm, kind_chosen, self.world.time)
+        self.comm_new_message(comm, response)
 
     def comm_responses(self, comm:Comm):
-        kinds = []
+        messages = []
 
-        if comm.kind==CommKind.HAI:
+        if comm.kind == CommKind.HAI:
             if comm.history:
-                if comm.history[0]["received"]: #if last was received
-                    last=comm.history[0]["message"]["kind"].name
+                if comm.history[0].incoming: #if last was received
+                    last=comm.history[0].intent.name
                     if last in ["GREETING", "WELCOME", "ACKNOWLEDGE"]:
-                        kinds.extend([
-                            "GREETING",
-                            "ADVICE_ASK",
-                            "TASK_ADD"
-                        ])
-                    if last=="ADVICE_GIVE":
-                        kinds.extend([
-                            "THANKS",
-                            "CANCEL"
-                        ])
-                    if last=="TASK_REQUEST":
-                        kinds.extend([
-                            "TASK_RECON",
-                            "TASK_PRODUCE",
-                            "CANCEL"
-                        ])
+                        messages = [
+                            self.build_message(
+                                comm, Intent.GREETING, comm.names(), False
+                            ),
+                            self.build_message(
+                                comm, Intent.ADVICE_ASK, {}, False
+                            ),
+                            self.build_message(
+                                comm, Intent.TASK_ADD, {}, False
+                            )
+                        ]
+                    elif last == "TASK_REQUEST":
+                        messages = [
+                            self.build_message(
+                                comm, Intent.CANCEL, {}, False
+                            ),
+                            self.build_message(
+                                comm, Intent.TASK_PRODUCE, {}, False
+                            ),
+                            self.build_message(
+                                comm, Intent.TASK_RECON, {}, False
+                            )
+                        ]
 
-        kinds = list(set(kinds))
-        candidates=[]
-        for kind in kinds:
-            chosen=self.build_message(comm, MessageKind[kind], False)
-            candidates.append(chosen)
         print(f"[game] {comm.cid} responses updated")
-        comm.responses=candidates
+        comm.responses=messages
 
-    def comm_send(self, comm:Comm, message:dict):
-        timestamp = self.world.time
+    def comm_send(self, comm: Comm, message: Message):
 
-        comm.history.insert(
-            0, {"message": message, "received": False, "timestamp": timestamp}
-        )
-        comm.transcribe(message, False, timestamp)
+        self.comm_new_message(comm, message)
 
-        print(f"[game] message sent in {comm.cid}: {message['kind']} {format_time_short(timestamp)}")
+        print(f"[game] message sent in {comm.cid}: {message.intent} {format_time_short(message.timestamp)}")
 
         self.world.processes.append((
-            partial(self.comm_react, comm, message["kind"]),
+            partial(self.comm_react, comm, message),
             comm.ping
         ))
-        game.comm_responses(comm)
-        comm.new_message=True
 
-    def comm_receive(self, comm:Comm, kind: MessageKind, timestamp: float):
+    def comm_new_message(self, comm:Comm, message: Message):
 
-        chosen=self.build_message(comm, kind, True)
-
-        comm.history.insert(
-            0, {"message": chosen, "received": True, "timestamp": timestamp}
-        )
-        comm.transcribe(chosen, True, timestamp)
-        game.comm_responses(comm)
+        comm.history.insert(0, message)
+        comm.transcribe(message)
+        self.comm_responses(comm)
         comm.new_message = True
-        print(f"[game] message received in {comm.cid}: {kind.name} {format_time_short(timestamp)}")
+        print(f"[game] message received in {comm.cid}: {message.intent.name} {format_time_short(message.timestamp)}")
 
 
-    def format_message(self, message: dict, comm: Comm, received: bool):
-        text=message["text"]
-        kind=message["kind"]
+    def format_message(self, template: dict, comm: Comm, incoming: bool, data: dict):
+        text = template["text"]
+        intent = template["intent"]
+        sender = comm.sender if not incoming else comm.recipient
+        recipient = comm.recipient if not incoming else comm.sender
+        data["sender_name"], data["sender_first_name"]  = sender.name, sender.name.split()[0]
+        data["recipient_name"], data["recipient_first_name"] = recipient.name, recipient.name.split()[0]
 
-        sender_name=comm.sender.name if not received else comm.recipient.name
-        recipient_name=comm.recipient.name if not received else comm.sender.name
-        if "{sender_name}" in text:
-            text=text.replace("{sender_name}", sender_name)
-        if "{sender_first_name}" in text:
-            text=text.replace("{sender_first_name}", sender_name.split()[0])
-        if "{sender_last_name}" in text:
-            text=text.replace("{sender_last_name}", sender_name.split()[1])
-        if "{recipient_name}" in text:
-            text=text.replace("{recipient_name}", recipient_name)
-        if "{recipient_first_name}" in text:
-            text=text.replace("{recipient_first_name}", recipient_name.split()[0])
-        if "{recipient_last_name}" in text:
-            text=text.replace("{recipient_last_name}", recipient_name.split()[1])
+        for key, value in data.items():
+            target = "{" + key + "}"
+            text = text.replace(target, value)
 
-        message["text"]=text
+        message = Message(
+            intent = intent,
+            text = text,
+            sender = sender,
+            recipient = recipient,
+            comm = comm,
+            incoming = incoming,
+            timestamp = self.world.time,
+            data = data
+        )
+
         return message
 
+    def build_message(self, comm:Comm, intent: Intent, data: dict, incoming: bool) -> Message:
 
+        templates = self.script["messages"].get(intent, [])
+        candidates = []
 
-    def build_message(
-            self,
-            comm:Comm,
-            kind: MessageKind,
-            received: bool
-    ) -> dict:
-        templates=self.script["messages"].get(kind, [])
-        candidates=[]
-        message_sender=comm.sender if not received else comm.recipient
-        message_recipient=comm.recipient if not received else comm.sender
-
+        message_sender = comm.sender if not incoming else comm.recipient
+        message_recipient = comm.recipient if not incoming else comm.sender
         for message in templates:
-            points=0
-            sender, recipient=message["sender"], message["recipient"]
+            points = 0
+            sender, recipient = message["sender"], message["recipient"]
+
             if sender:
-                if sender!=message_sender:
+                if sender != message_sender:
                     continue
-                points+=1
+                points += 1
             if recipient:
-                if recipient!=message_recipient:
+                if recipient != message_recipient:
                     continue
-                points+=1
-
-
+                points += 1
 
             candidates.append((message, points))
-        candidates.sort(key=lambda x: x[1], reverse=True)
-        candidates=candidates[:3]
-        chosen=random.choice(
+        candidates.sort(key = lambda x: x[1], reverse = True)
+        candidates = candidates[:3]
+        chosen = random.choice(
             candidates
         )[0] if candidates else {
-            "text": kind.name,
-            "kind": kind
+            "text": intent.name,
+            "intent": intent
         }
 
-        chosen=self.format_message(chosen, comm, received)
+        chosen=self.format_message(chosen, comm, incoming, data)
 
         return chosen
 
@@ -192,11 +192,12 @@ class Game:
                         for effect, content in story["on_trigger"].items():
                             if effect == "message":
                                 comm = self.world.comms[content["cid"]]
-                                kind = MessageKind[content["kind"]]
-                                self.comm_receive(
+                                intent = Intent[content["intent"]]
+                                data = content.get("data", {})
+                                incoming = content["incoming"]
+                                self.comm_new_message(
                                     comm,
-                                    kind,
-                                    self.world.time
+                                    self.build_message(comm, intent, data, incoming)
                                 )
                     except Exception as e:
                         print(f"Trigger error: {e}")
@@ -336,35 +337,40 @@ class Game:
                 ]
 
         new_messages={}
-        for kind, messages in self.script["messages"].items():
-            new_messages[MessageKind[kind]]=[
+        for intent, messages in self.script["messages"].items():
+            new_messages[Intent[intent]]=[
                 {
-                    "kind": MessageKind[kind],
+                    "intent": Intent[intent],
                     "text": message["text"],
                     "sender": world.people[message["sender"]] if message.get("sender") else None,
-                    "recipient": world.people[message["recipient"]] if message.get("recipient") else None
+                    "recipient": world.people[message["recipient"]] if message.get("recipient") else None,
                 } for message in messages
             ]
         self.script["messages"]=new_messages
 
         for comm in data["comms"].values():
             world.comms[comm["cid"]]=Comm(
-                cid=comm["cid"],
-                kind=CommKind[comm["kind"]],
-                sender=world.people[comm["sender"]],
-                recipient=world.people[comm["recipient"]],
-                history=[
-                    {
-                        "message": self.script["messages"][message["mid"]],
-                        "received": message["received"],
-                        "timestamp": message["timestamp"]
-                    } for message in comm["history"]
+                cid = comm["cid"],
+                kind = CommKind[comm["kind"]],
+                sender = world.people[comm["sender"]],
+                recipient = world.people[comm["recipient"]],
+                trust = comm["trust"],
+                history = [
+                    Message(
+                        intent = Intent[message["intent"]],
+                        text = message["text"],
+                        sender = world.people[message["sender"]],
+                        recipient = world.people[message["recipient"]],
+                        comm = world.comms[message["comm"]],
+                        timestamp = message["timestamp"],
+                        data = message["data"],
+                    ) for message in comm["history"]
                 ],
-                ping=comm["ping"]
+                ping = comm["ping"]
             )
-            for message in comm["history"]:
+            for message in world.comms[comm["cid"]].history:
                 world.comms[comm["cid"]].transcribe(
-                    message["message"], message["received"], message["timestamp"]
+                    message
                 )
 
         self.plot = plot
@@ -373,6 +379,17 @@ class Game:
             f"{len(world.people)} people, {len(world.objects)} objects, {len(world.comms)} comms"
         )
         return world
+
+def rank(value: float) -> str:
+    global RANKS
+    grade = "?"
+    value = max(0.0, (min(10.0, value)))
+    for threshold, label in RANKS:
+        if value < threshold:
+            grade = label
+    return grade
+
+
 
 def build_storage(data, world):
     if not data:
@@ -401,4 +418,17 @@ game = Game()
 
 GTE_check = [
     ("states", "time")
+]
+
+RANKS = [
+    (2, "F"),
+    (3, "E"),
+    (4, "D"),
+    (5, "C"),
+    (6, "C+"),
+    (7, "B"),
+    (8, "B+"),
+    (9, "A"),
+    (10, "A+"),
+    (float("inf"), "S"),
 ]

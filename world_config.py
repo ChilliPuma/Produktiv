@@ -24,17 +24,17 @@ class Faction(Enum):
 
     MORMON = auto()
 
-class MessageKind(Enum):
-    ERROR = auto()
+class Intent(Enum):
+    NONE = auto()
     CANCEL = auto()
 
     GREETING = auto()
     ACKNOWLEDGE = auto()
-    THANKS=auto()
-    WELCOME=auto()
+    THANKS = auto()
+    WELCOME = auto()
 
-    ADVICE_ASK=auto()
-    ADVICE_GIVE=auto()
+    ADVICE_ASK = auto()
+    ADVICE_GIVE = auto()
 
     STATUS = auto()
     PROBLEM = auto()
@@ -50,7 +50,6 @@ class MessageKind(Enum):
 class Nation(Enum):
     NONE = auto()
     AMERICAN_WHITE = auto()
-
 
 class Sex(Enum):
     MALE = auto()
@@ -286,41 +285,72 @@ class Person:
         self.temperament = temperament
         self.title = title
 
+class Message:
+    def __init__(self,
+        intent: Intent,
+        text: str,
+        sender: Person = None,
+        recipient: Person = None,
+        comm: "Comm" = None,
+        incoming: bool = None,
+        timestamp: float = None,
+        data: dict = None #for formatting and game_logic
+    ):
+        self.intent = intent
+        self.text = text
+        self.sender = sender
+        self.recipient = recipient
+        self.comm = comm
+        self.incoming = incoming
+        self.timestamp = timestamp
+        self.data = data
+
 class Comm:
     def __init__(self,
         cid: str,
         kind: CommKind,
         sender: Person,
         recipient: Person,
-        history: list[dict] = None, #message dict, received, timestamp
-        transcript: list[dict] = None, #message text, side, timestamp
-        responses: list[dict] = None,
-        ping: float=2.0
+        trust: float, #max 10
+        history: list[Message] = None,
+        transcript: list[tuple[str, Message]] = None, #message text, message source
+        responses: list[Message] = None,
+        ping: float = 2.0
         ):
 
-        self.cid=cid
-        self.kind=kind
-        self.sender=sender
-        self.recipient=recipient
+        self.cid = cid
+        self.kind = kind
+        self.sender = sender
+        self.recipient = recipient
+        self.trust = trust
 
-        self.history: list[dict]=history if history is not None else []
-        self.transcript: list[dict]=transcript if transcript is not None else []
-        self.responses: list[dict]=responses if responses is not None else []
+        self.history: list[Message] = history if history is not None else []
+        self.transcript: list[tuple[str, Message]] = transcript if transcript is not None else []
+        self.responses: list[dict] = responses if responses is not None else []
 
-        self.ping=ping
-        self.new_message=False
+        self.ping = ping
+        self.new_message = False
 
-        self.char=81
+        self.char = 81
 
-    def transcribe(self, message: dict, received: bool, timestamp: float):
-        lines=text_lines(message["text"], self.char)
-        if received:
-            for line in lines:
+    def transcribe(self, message: Message):
+        lines=text_lines(message.text, self.char)
+        for line in lines:
                 self.transcript.insert(
-                    0, {"text": line, "side": "left", "timestamp": timestamp}
+                    0, (line, message)
                 )
-        else:
-            for line in lines:
-                self.transcript.insert(
-                    0, {"text": line, "side": "right", "timestamp": timestamp}
-                )
+
+    def names(self) -> dict[str, str]:
+        r_name = self.recipient.name
+        r_first_name = r_name.split()[0]
+
+        s_name = self.sender.name
+        s_first_name = s_name.split()[0]
+
+        names_dict = {
+            "recipient_name": r_name,
+            "recipient_first_name": r_first_name,
+            "sender_name": s_name,
+            "sender_first_name": s_first_name,
+        }
+        return names_dict

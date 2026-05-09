@@ -4,15 +4,13 @@ from enum import Enum, auto
 
 # Enums‐-----------------------------------------
 
-class StorageKind(Enum):
-    NONE = auto()
+class Action(Enum):
+    SURFACE = auto()
 
-    AMMO_9MM = auto()
+    CUT = auto()
+    HAMMER = auto()
 
-    OBJECT = auto()
-    GRAIN = auto()
-    LIQUID = auto()
-    GAS = auto()
+    CARRY = auto()
 
 class CommKind(Enum):
     HAI = auto()
@@ -44,6 +42,7 @@ class Intent(Enum):
     TASK_REPEAT = auto()
 
     TASK_REQUEST = auto()
+    TASK_CAN_PRODUCE = auto()
 
     TASK_RECON = auto()
     TASK_PRODUCE = auto()
@@ -62,6 +61,16 @@ class Skill(Enum):
     VIT = auto()
     SOC = auto()
     INT = auto()
+
+class StorageKind(Enum):
+    NONE = auto()
+
+    AMMO_9MM = auto()
+
+    OBJECT = auto()
+    GRAIN = auto()
+    LIQUID = auto()
+    GAS = auto()
 
 class Substance(Enum):
     COMPOSITE = auto()
@@ -145,7 +154,7 @@ class Object:
                  substance: Substance = None,
                  components: dict[str, int] = None,
                  storage: dict = None,
-                 production: list[dict] = None,
+                 actions: dict[Action, float] = None, #Action: rank 0-10
                  description: str = ""):  # ingame secs
 
         self.oid = oid
@@ -159,7 +168,7 @@ class Object:
                 substance or Substance.COMPOSITE)
         self.components = components or {}
         self.storage = storage or {}
-        self.production = production or []
+        self.actions = actions or {}
 
     def total_weight(self):
         total = self.weight
@@ -181,6 +190,19 @@ class Object:
                 if obj.volume + self.used_storage() <= self.storage["max"]:
                     return True
         return False
+
+class Recipe:
+    def __init__(
+        self,
+        name: str,
+        product: tuple[Object, int],
+        inputs: dict[Object, int],
+        byproducts: list[tuple[Object, int]] = None
+    ):
+        self.name = name
+        self.product = product
+        self.inputs = inputs
+        self.byproducts = byproducts if byproducts is not None else []
 
 #Area----------------------------------------------------------
 
@@ -240,6 +262,28 @@ class Facility:
         for area_name, area in self.areas.items():
             self.total_area += area.area
 
+    def can_produce(self, person: "Person"):
+        can_produce = {}
+        all_inventory = self.all_inventory()
+        for recipe in person.recipes:
+            missing = False
+            up_to = []
+            availability = {}
+            for ingredient, min_qty in recipe.inputs.items():
+                available = all_inventory.get(ingredient, 0)
+                if available < min_qty:
+                    missing = True
+                    break
+                else:
+                    availability[ingredient] = (available, min_qty)
+                    up_to.append(available//min_qty)
+            if missing:
+                continue
+            can_produce[recipe["product"]] = {
+                "up_to": min(up_to),
+                "availability": availability,
+            }
+
     def used_area(self) -> float:
         used_area = 0.0
         for a_name, area in self.areas.items():
@@ -269,6 +313,7 @@ class Person:
         age: int,
         skills: dict[Skill, float], # max 10
         temperament: Temperament,
+        recipes: list[Recipe] = None,
         facility: Facility = None,
         area: Area = None,
         nation: Nation = None,
@@ -280,11 +325,13 @@ class Person:
         self.pid = pid
         self.sex = sex
         self.age = age
+        self.skills = skills
+        self.temperament = temperament
+        self.recipes = recipes if recipes is not None else []
         self.facility = facility
         self.area = area
         self.nation = nation
-        self.skills = skills
-        self.temperament = temperament
+        self.faction = faction
         self.title = title
 
 class Message:

@@ -1,21 +1,49 @@
 {
   "objects": {
 
-    "plank_4x16_wood": {
-      "oid": "plank_4x16_wood",
-      "name": "4x16 plank",
-      "description": "A thick rectangular plank of wood. A first step in carpentry",
-      "weight": 5.0,
-      "volume": 5.0,
-      "area": 0.05,
+    "wood_beam_4x16": {
+      "oid": "wood_beam_4x16",
+      "name": "4x16 wood beam",
+      "description": "Long beam of wood. Very strong",
+      "weight": 13.5,
+      "volume": 19.2,
+      "area": 0.48,
       "substance": "WOOD",
       "components": [],
       "storage": {},
-      "production": {}
+      "actions": {}
     },
 
-    "bit_nail": {
-      "oid": "bit_nail",
+    "wood_plank_4x16": {
+      "oid": "wood_plank_4x16",
+      "name": "4x16 wood plank",
+      "description": "A thick rectangular plank of wood. Very common in carpentry",
+      "weight": 2.25,
+      "volume": 3.2,
+      "area": 0.08,
+      "substance": "WOOD",
+      "components": [],
+      "storage": {},
+      "actions": {}
+    },
+
+    "steel_hand_saw_wood": {
+      "oid": "steel_hand_saw_wood",
+      "name": "Hand saw",
+      "description": "Wood handle, steel blade. Sturdy and reliable.",
+      "weight": 3.0,
+      "volume": 1.5,
+      "area": 0.6,
+      "substance": "COMPOSITE",
+      "components": [],
+      "storage": {},
+      "actions": {
+        "CUT": 4.0
+      }
+    },
+
+    "steel_nail": {
+      "oid": "steel_nail",
       "name": "Nail",
       "description": "A steel nail",
       "weight": 0.005,
@@ -27,12 +55,12 @@
       "production": {}
     },
 
-    "rod_steel": {
-      "oid": "tube_steel",
-      "name": "Steel tube",
+    "steel_rod": {
+      "oid": "steel_rod",
+      "name": "Steel rod",
       "description": "An essential part for many items, strong and versatile",
       "weight": 1.0,
-      "volume": 0.7,
+      "volume": 0.3,
       "area": 0.003,
       "substance": "STEEL",
       "components": [],
@@ -40,19 +68,15 @@
       "production": {}
     },
 
-    "table_wood": {
-      "oid": "table_wood",
-      "name": "Wood table",
+    "wood_table": {
+      "oid": "wood_table",
+      "name": "Wooden table",
       "description": "A sturdy wooden table, has room for objects under and on it.",
       "weight": 20.0,
       "volume": 2400,
       "area": 2.1,
       "substance": "COMPOSITE",
       "components": [
-        {
-            "oid": "plank_wood",
-            "qty": 12
-          },
           {
             "oid": "bit_nail",
             "qty": 16
@@ -63,7 +87,9 @@
         "max": 2100,
         "content": []
       },
-      "production": {}
+      "actions": {
+        "SURFACE": 4.0
+      }
     }
   },
 

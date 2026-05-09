@@ -5,7 +5,7 @@ from functools import partial
 
 import loader
 from world_config import World, Person, Facility, Area, Object, Substance, Sex, Skill, Temperament, Nation, Faction, \
-    Comm, CommKind, Intent, format_time_short, Message
+    Comm, CommKind, Intent, format_time_short, Message, Action
 
 
 class Game:
@@ -43,11 +43,14 @@ class Game:
                 response = self.build_message(
                     comm, Intent.TASK_REQUEST, {}, True
                 )
-            elif intent == "TASK_RECON":
+
+            elif intent == "TASK_PRODUCE":
+                facility = comm.sender.facility
+                can_produce = facility.can_produce(comm.sender)
                 response = self.build_message(
-                    comm, Intent.ACKNOWLEDGE, {}, True
+                    comm, Intent.TASK_CAN_PRODUCE, {"can_produce": can_produce}, True
                 )
-            elif intent == "TASK_BUILD":
+            elif intent == "TASK_RECON":
                 response = self.build_message(
                     comm, Intent.ACKNOWLEDGE, {}, True
                 )
@@ -61,8 +64,11 @@ class Game:
         if comm.kind == CommKind.HAI:
             if comm.history:
                 if comm.history[0].incoming: #if last was received
-                    last=comm.history[0].intent.name
-                    if last in ["GREETING", "WELCOME", "ACKNOWLEDGE"]:
+                    intent = comm.history[0].intent
+                    data = comm.history[0].data
+                    if intent in [
+                        Intent.GREETING, Intent.WELCOME, Intent.ACKNOWLEDGE
+                    ]:
                         messages = [
                             self.build_message(
                                 comm, Intent.GREETING, comm.names(), False
@@ -74,7 +80,7 @@ class Game:
                                 comm, Intent.TASK_ADD, {}, False
                             )
                         ]
-                    elif last == "ADVICE_GIVE":
+                    elif intent == Intent.ADVICE_GIVE:
                         messages = [
                             self.build_message(
                                 comm, Intent.THANKS, {}, False
@@ -84,7 +90,7 @@ class Game:
                             )
                         ]
 
-                    elif last == "TASK_REQUEST":
+                    elif intent == Intent.TASK_REQUEST:
                         messages = [
                             self.build_message(
                                 comm, Intent.CANCEL, {}, False
@@ -96,6 +102,12 @@ class Game:
                                 comm, Intent.TASK_RECON, {}, False
                             )
                         ]
+                    elif intent == Intent.TASK_CAN_PRODUCE:
+                        can_produce = data["can_produce"]
+                        messages = [
+                            self.
+                        ]
+
 
         print(f"[game] {comm.cid} responses updated")
         comm.responses=messages
@@ -290,16 +302,19 @@ class Game:
 
         for obj in data["objects"].values():
             world.objects[obj["oid"]] = Object(
-                oid=obj["oid"],
-                name=obj["name"],
-                description=obj["description"],
-                weight=obj["weight"],
-                volume=obj["volume"],
-                area=obj["area"],
-                substance=Substance[obj["substance"]],
-                storage={}, #nested builds after
-                production=obj["production"]
+                oid = obj["oid"],
+                name = obj["name"],
+                description = obj["description"],
+                weight = obj["weight"],
+                volume = obj["volume"],
+                area = obj["area"],
+                substance = Substance[obj["substance"]],
+                storage = {}, #nested builds after
+                actions = {}
             )
+            for action, qty in obj["actions"].items():
+                world.objects[obj["oid"]].actions[Action[action]] = qty
+
         for obj in data["objects"].values():
             world.objects[obj["oid"]].storage=build_storage(obj["storage"], world)
 

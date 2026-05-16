@@ -1,11 +1,11 @@
 from enum import Enum, auto
-
+from zoneinfo import available_timezones
 
 
 # Enums‐-----------------------------------------
 
 class Action(Enum):
-    SURFACE = auto()
+    SURFACE_NORMAL = auto()
 
     CUT = auto()
     HAMMER = auto()
@@ -40,9 +40,12 @@ class Intent(Enum):
 
     TASK_ADD = auto()
     TASK_REPEAT = auto()
+    TASK_PRODUCE_RECIPE = auto()
+    TASK_PRODUCE_METHOD = auto()
 
     TASK_REQUEST = auto()
     TASK_CAN_PRODUCE = auto()
+    TASK_HOW_PRODUCE = auto()
 
     TASK_RECON = auto()
     TASK_PRODUCE = auto()
@@ -197,11 +200,15 @@ class Recipe:
         name: str,
         product: tuple[Object, int],
         inputs: dict[Object, int],
+        surfaces: list[Action], #SURFACE_ Actions
+        method: list[tuple[Action, float]], #step by step of action and normal time
         byproducts: list[tuple[Object, int]] = None
     ):
         self.name = name
         self.product = product
         self.inputs = inputs
+        self.surfaces = surfaces
+        self.method = method
         self.byproducts = byproducts if byproducts is not None else []
 
 #Area----------------------------------------------------------
@@ -264,25 +271,66 @@ class Facility:
 
     def can_produce(self, person: "Person"):
         can_produce = {}
-        all_inventory = self.all_inventory()
-        for recipe in person.recipes:
-            missing = False
-            up_to = []
-            availability = {}
-            for ingredient, min_qty in recipe.inputs.items():
-                available = all_inventory.get(ingredient, 0)
-                if available < min_qty:
-                    missing = True
-                    break
-                else:
-                    availability[ingredient] = (available, min_qty)
-                    up_to.append(available//min_qty)
-            if missing:
-                continue
-            can_produce[recipe["product"]] = {
-                "up_to": min(up_to),
-                "availability": availability,
-            }
+        inventory = self.all_inventory()
+        useless_objs = []
+        for surface_candidate in inventory:
+
+            for recipe in person.recipes:
+                how_produce = []
+                for surface in recipe.surfaces:
+                    if surface not in surface_candidate.actions:
+                        continue
+
+                    surface_storage = surface_candidate.all_storage()
+                    used_inputs = []
+                    matched_inputs = {}
+                    no_inputs = False
+                    for input_candidate in surface_storage:
+                        if input_candidate in used_inputs:
+                            continue
+                        for input_obj in recipe.inputs.keys():
+                            if not input_candidate.is_instance(input_obj):
+                                continue
+                            used_inputs.append(input_candidate)
+                            matched_inputs.setdefault(input_obj, []).append(input_candidate)
+                    for matched_input, obj_list in matched_inputs.items():
+                        if recipe.inputs[matched_input] > len(obj_list):
+                            no_inputs = True
+                            break
+                    if no_inputs:
+                        continue
+
+                    matched_tools = {}
+                    no_tools = False
+                    for tool_candidate in surface_storage:
+                        if tool_candidate in used_inputs:
+                            continue
+                        for i, (action, time) in enumerate(recipe.method):
+                            if action not in tool_candidate.actions:
+                                if action not in surface_candidate.actions:
+                                    continue
+                                tool_candidate = surface_candidate
+                            if matched_tools.get(i):
+                                if tool_candidate.actions[action] > matched_tools.get(i):
+                                    matched_tools[i] = tool_candidate
+                            else:
+                                matched_tools[i] = tool_candidate
+
+                    if len(matched_tools) < len(recipe.method):
+                        no_tools = True
+                    if no_tools:
+                        continue
+
+                    how_produce.append(
+                        {
+                            "surface": surface_candidate,
+                            "inputs": matched_inputs,
+                            "tools": matched_tools,
+                        }
+                    )
+
+
+        return can_produce
 
     def used_area(self) -> float:
         used_area = 0.0

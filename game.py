@@ -19,38 +19,43 @@ class Game:
         response = self.build_message(
             comm, Intent.NONE, {}, True
         )
-        intent = message.intent.name
+        intent = message.intent
         if comm.kind.name=="HAI":
-            if intent == "GREETING":
+            if intent == Intent.GREETING:
                 response = self.build_message(
                     comm, Intent.GREETING, {}, True
                 )
-            elif intent in ["CANCEL"]:
+            elif intent in [Intent.CANCEL]:
                 response = self.build_message(
                     comm, Intent.ACKNOWLEDGE, {}, True
                 )
-            elif intent in ["THANKS"]:
+            elif intent in [Intent.THANKS]:
                 response = self.build_message(
                     comm, Intent.WELCOME, {}, True
                 )
 
-            elif intent in ["ADVICE_ASK", "ADVICE_MORE"]:
+            elif intent in [Intent.ADVICE_ASK, Intent.ADVICE_MORE]:
                 response = self.build_message(
                     comm, Intent.ADVICE_GIVE, {}, True
                 )
 
-            elif intent == "TASK_ADD":
+            elif intent == Intent.TASK_ADD:
                 response = self.build_message(
                     comm, Intent.TASK_REQUEST, {}, True
                 )
 
-            elif intent == "TASK_PRODUCE":
+            elif intent == Intent.TASK_PRODUCE:
                 facility = comm.sender.facility
                 can_produce = facility.can_produce(comm.sender)
                 response = self.build_message(
                     comm, Intent.TASK_CAN_PRODUCE, {"can_produce": can_produce}, True
                 )
-            elif intent == "TASK_RECON":
+            elif intent == Intent.TASK_PRODUCE_RECIPE:
+                self.build_message(
+                    comm, Intent.TASK_HOW_PRODUCE, message.data, True
+                )
+
+            elif intent == Intent.TASK_RECON:
                 response = self.build_message(
                     comm, Intent.ACKNOWLEDGE, {}, True
                 )
@@ -104,9 +109,33 @@ class Game:
                         ]
                     elif intent == Intent.TASK_CAN_PRODUCE:
                         can_produce = data["can_produce"]
-                        messages = [
-                            self.
+                        recipes = [
+                            recipe for recipe in can_produce.keys()
                         ]
+                        messages = [
+                            self.build_message(
+                                comm, intent.TASK_PRODUCE_RECIPE,
+                                {
+                                    "recipe_name": recipe.name,
+                                    "recipe": recipe,
+                                    "candidates": can_produce[recipe]
+                                },
+                                False
+                            ) for recipe in recipes
+                        ]
+                    elif intent == Intent.TASK_HOW_PRODUCE:
+
+                        for candidate in data["candidates"]:
+                            surface = candidate["surface"]
+                            inputs = candidate["inputs"]
+                            best_method = {}
+                            for step, tool_list in candidate["method"].items():
+                                best_tool = max(tool_list, key=lambda tv: tv[1])[0]
+
+                                best_method[step] = best_tool
+
+                            tools = [tool.name for tool in best_method.values()]
+
 
 
         print(f"[game] {comm.cid} responses updated")
